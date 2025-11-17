@@ -1,4 +1,24 @@
 {
   "name": "stracker-phil/agentic-endpoints",
-  "description": "Provides REST endpoints for efficient WP maintenance by an AI agent"
+  "description": "Provides REST endpoints for efficient WP maintenance by an AI agent",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": "^7.4 | ^8.0",
+    "stracker-phil/wpdi": "^1.0",
+    "erusev/parsedown": "^1.7",
+    "league/html-to-markdown": "^5.1"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest"
+  },
+  "autoload": {
+    "psr-4": {
+      "AgenticEndpoints\\": "src/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
 }
