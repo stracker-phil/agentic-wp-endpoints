@@ -40,7 +40,7 @@ class TestableEndpoint extends AbstractEndpoint {
 		return $this->route;
 	}
 
-	protected function get_methods() {
+	protected function get_methods(): string {
 		return $this->method;
 	}
 
@@ -48,8 +48,8 @@ class TestableEndpoint extends AbstractEndpoint {
 		return $this->args;
 	}
 
-	public function handle(WP_REST_Request $request) {
-		return $this->success(['test' => 'data']);
+	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		return $this->success( [ 'test' => 'data' ] );
 	}
 
 	// Expose protected methods for testing

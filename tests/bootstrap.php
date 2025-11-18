@@ -157,8 +157,12 @@ if ( ! class_exists( 'WP_Error' ) ) {
 if ( ! class_exists( 'WP_Post' ) ) {
 	class WP_Post {
 		public int $ID;
-		public string $post_content = '';
-		public string $post_title   = '';
+		public string $post_content  = '';
+		public string $post_title    = '';
+		public string $post_status   = 'publish';
+		public string $post_name     = '';
+		public string $post_date     = '2024-01-01 00:00:00';
+		public string $post_modified = '2024-01-01 00:00:00';
 
 		public function __construct( int $id = 0 ) {
 			$this->ID = $id;
