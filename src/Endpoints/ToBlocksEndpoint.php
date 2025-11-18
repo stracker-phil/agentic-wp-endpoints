@@ -46,7 +46,7 @@ class ToBlocksEndpoint extends AbstractEndpoint {
 	 * @return string
 	 */
 	protected function get_route(): string {
-		return '/convert/to-blocks';
+		return '/agentic-post';
 	}
 
 	/**

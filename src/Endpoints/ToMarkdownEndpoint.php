@@ -46,7 +46,7 @@ class ToMarkdownEndpoint extends AbstractEndpoint {
 	 * @return string
 	 */
 	protected function get_route(): string {
-		return '/convert/to-markdown';
+		return '/agentic-post';
 	}
 
 	/**
