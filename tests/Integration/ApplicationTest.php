@@ -113,23 +113,23 @@ class ApplicationTest extends TestCase {
 	}
 
 	#[Test]
-	public function it_registers_to_blocks_endpoint(): void {
+	public function it_registers_agentic_post_endpoint(): void {
 		global $registered_rest_routes;
 
 		$this->application->register_rest_routes();
 
 		$routes = array_column($registered_rest_routes, 'route');
-		$this->assertContains('/convert/to-blocks', $routes);
+		$this->assertContains('/agentic-post', $routes);
 	}
 
 	#[Test]
-	public function it_registers_to_markdown_endpoint(): void {
+	public function it_registers_both_methods_on_same_route(): void {
 		global $registered_rest_routes;
 
 		$this->application->register_rest_routes();
 
 		$routes = array_column($registered_rest_routes, 'route');
-		$this->assertContains('/convert/to-markdown', $routes);
+		$this->assertEquals(['/agentic-post', '/agentic-post'], $routes);
 	}
 
 	#[Test]
@@ -144,31 +144,33 @@ class ApplicationTest extends TestCase {
 	}
 
 	#[Test]
-	public function it_registers_to_blocks_with_post_method(): void {
+	public function it_registers_post_method_for_to_blocks(): void {
 		global $registered_rest_routes;
 
 		$this->application->register_rest_routes();
 
-		$toBlocks = array_filter($registered_rest_routes, function ($route) {
-			return $route['route'] === '/convert/to-blocks';
+		$postRoute = array_filter($registered_rest_routes, function ($route) {
+			return $route['args']['methods'] === 'POST';
 		});
 
-		$toBlocks = array_values($toBlocks)[0];
-		$this->assertEquals('POST', $toBlocks['args']['methods']);
+		$this->assertCount(1, $postRoute);
+		$postRoute = array_values($postRoute)[0];
+		$this->assertEquals('/agentic-post', $postRoute['route']);
 	}
 
 	#[Test]
-	public function it_registers_to_markdown_with_get_method(): void {
+	public function it_registers_get_method_for_to_markdown(): void {
 		global $registered_rest_routes;
 
 		$this->application->register_rest_routes();
 
-		$toMarkdown = array_filter($registered_rest_routes, function ($route) {
-			return $route['route'] === '/convert/to-markdown';
+		$getRoute = array_filter($registered_rest_routes, function ($route) {
+			return $route['args']['methods'] === 'GET';
 		});
 
-		$toMarkdown = array_values($toMarkdown)[0];
-		$this->assertEquals('GET', $toMarkdown['args']['methods']);
+		$this->assertCount(1, $getRoute);
+		$getRoute = array_values($getRoute)[0];
+		$this->assertEquals('/agentic-post', $getRoute['route']);
 	}
 
 	// =========================

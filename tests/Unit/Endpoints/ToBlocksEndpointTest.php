@@ -46,7 +46,7 @@ class ToBlocksEndpointTest extends TestCase {
 
 		$this->assertCount(1, $registered_rest_routes);
 		$this->assertEquals('agentic/v1', $registered_rest_routes[0]['namespace']);
-		$this->assertEquals('/convert/to-blocks', $registered_rest_routes[0]['route']);
+		$this->assertEquals('/agentic-post', $registered_rest_routes[0]['route']);
 	}
 
 	#[Test]
