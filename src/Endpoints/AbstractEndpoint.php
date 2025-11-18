@@ -39,7 +39,7 @@ abstract class AbstractEndpoint {
 	 *
 	 * @return string|array
 	 */
-	abstract protected function get_methods();
+	abstract protected function get_methods(): array|string;
 
 	/**
 	 * Handle the REST request.
@@ -47,7 +47,7 @@ abstract class AbstractEndpoint {
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	abstract public function handle( WP_REST_Request $request );
+	abstract public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response;
 
 	/**
 	 * Get the arguments schema for the endpoint.
@@ -64,7 +64,7 @@ abstract class AbstractEndpoint {
 	 * @param WP_REST_Request $request REST request.
 	 * @return bool|WP_Error
 	 */
-	public function check_permission( WP_REST_Request $request ) {
+	public function check_permission( WP_REST_Request $request ): WP_Error|bool {
 		// Default: require edit_posts capability.
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new WP_Error(
@@ -102,7 +102,7 @@ abstract class AbstractEndpoint {
 	 * @param int   $status HTTP status code.
 	 * @return WP_REST_Response
 	 */
-	protected function success( $data, int $status = 200 ): WP_REST_Response {
+	protected function success( mixed $data, int $status = 200 ): WP_REST_Response {
 		return new WP_REST_Response( $data, $status );
 	}
 

@@ -86,7 +86,7 @@ class ToMarkdownEndpoint extends AbstractEndpoint {
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle( WP_REST_Request $request ) {
+	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post_id = $request->get_param( 'post_id' );
 		$content = $request->get_param( 'content' );
 

@@ -80,7 +80,7 @@ class ToBlocksEndpoint extends AbstractEndpoint {
 	 * @param WP_REST_Request $request REST request.
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function handle( WP_REST_Request $request ) {
+	public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response {
 		$markdown = $request->get_param( 'markdown' );
 
 		if ( empty( $markdown ) ) {
