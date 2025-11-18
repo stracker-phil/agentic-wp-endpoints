@@ -68,14 +68,8 @@ class ToMarkdownEndpoint extends AbstractEndpoint {
 			'post_id' => [
 				'description'       => __( 'Post ID to convert to Markdown.', 'agentic-endpoints' ),
 				'type'              => 'integer',
-				'required'          => false,
+				'required'          => true,
 				'sanitize_callback' => 'absint',
-			],
-			'content' => [
-				'description'       => __( 'Raw block content to convert to Markdown.', 'agentic-endpoints' ),
-				'type'              => 'string',
-				'required'          => false,
-				'sanitize_callback' => 'wp_kses_post',
 			],
 		];
 	}
@@ -88,52 +82,35 @@ class ToMarkdownEndpoint extends AbstractEndpoint {
 	 */
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post_id = $request->get_param( 'post_id' );
-		$content = $request->get_param( 'content' );
-
-		// Either post_id or content must be provided.
-		if ( empty( $post_id ) && empty( $content ) ) {
-			return $this->error(
-				'missing_parameter',
-				__( 'Either post_id or content parameter is required.', 'agentic-endpoints' ),
-				400
-			);
-		}
 
 		try {
-			$blocks = [];
+			// Get content from post.
+			$post = get_post( $post_id );
 
-			if ( ! empty( $post_id ) ) {
-				// Get content from post.
-				$post = get_post( $post_id );
-
-				if ( ! $post ) {
-					return $this->error(
-						'post_not_found',
-						__( 'Post not found.', 'agentic-endpoints' ),
-						404
-					);
-				}
-
-				$content = $post->post_content;
+			if ( ! $post ) {
+				return $this->error(
+					'post_not_found',
+					__( 'Post not found.', 'agentic-endpoints' ),
+					404
+				);
 			}
 
 			// Parse blocks from content.
-			$blocks = parse_blocks( $content );
+			$blocks = parse_blocks( $post->post_content );
 
 			// Convert blocks to Markdown.
 			$result = $this->converter->convert( $blocks );
 
-			$response_data = [
+			return $this->success( [
+				'post_id'           => $post_id,
+				'post_title'        => $post->post_title,
+				'post_status'       => $post->post_status,
+				'post_name'         => $post->post_name,
+				'post_date'         => $post->post_date,
+				'post_modified'     => $post->post_modified,
 				'markdown'          => $result['markdown'],
 				'has_html_fallback' => $result['has_html_fallback'],
-			];
-
-			if ( ! empty( $post_id ) ) {
-				$response_data['post_id']    = $post_id;
-				$response_data['post_title'] = $post->post_title;
-			}
-
-			return $this->success( $response_data );
+			] );
 		} catch ( Exception $e ) {
 			return $this->error(
 				'conversion_failed',
