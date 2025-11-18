@@ -5,7 +5,7 @@
  * Description: Provides REST endpoints for efficient WP maintenance by an AI agent
  * Version: 1.0.0
  * Author: Philipp Stracker
- * Author URI: https://stracker.dev
+ * Author URI: https://philippstracker.com
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: agentic-endpoints
