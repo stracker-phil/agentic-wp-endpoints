@@ -4,7 +4,7 @@
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
   "require": {
-    "php": "^7.4 | ^8.0",
+    "php": "^8.1",
     "stracker-phil/wpdi": "^1.0",
     "erusev/parsedown": "^1.7",
     "league/html-to-markdown": "^5.1"

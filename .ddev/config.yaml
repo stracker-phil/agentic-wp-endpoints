@@ -1,7 +1,7 @@
 name: agentic-endpoints
 type: wordpress
 docroot: .ddev/wordpress
-php_version: "8.0"
+php_version: "8.1"
 webserver_type: apache-fpm
 xdebug_enabled: false
 additional_hostnames: []

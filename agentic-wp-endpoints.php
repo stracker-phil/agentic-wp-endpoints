@@ -10,7 +10,7 @@
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: agentic-endpoints
  * Requires at least: 5.9
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  */
 
 declare( strict_types = 1 );
