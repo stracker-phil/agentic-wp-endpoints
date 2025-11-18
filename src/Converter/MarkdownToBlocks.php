@@ -204,11 +204,11 @@ class MarkdownToBlocks {
         // Inline code: `code`.
         $text = preg_replace('/`([^`]+)`/', '<code>$1</code>', $text);
 
+        // Images: ![alt](url) - must be before links to prevent ![alt](url) matching as a link.
+        $text = preg_replace('/!\[([^\]]*)\]\(([^\)]+)\)/', '<img src="$2" alt="$1" />', $text);
+
         // Links: [text](url).
         $text = preg_replace('/\[([^\]]+)\]\(([^\)]+)\)/', '<a href="$2">$1</a>', $text);
-
-        // Images: ![alt](url).
-        $text = preg_replace('/!\[([^\]]*)\]\(([^\)]+)\)/', '<img src="$2" alt="$1" />', $text);
 
         return $text;
     }
