@@ -37,37 +37,5 @@ if ( ! file_exists( AGENTIC_ENDPOINTS_DIR . 'vendor/autoload.php' ) ) {
 
 require_once AGENTIC_ENDPOINTS_DIR . 'vendor/autoload.php';
 
-/**
- * Main plugin class extending WPDI Scope.
- *
- * Uses composition root pattern - bootstrap() is the only place
- * where service resolution happens.
- */
-class Agentic_Endpoints_Plugin extends WPDI\Scope {
-
-	/**
-	 * Composition root - bootstraps the application.
-	 *
-	 * This is the ONLY place where service location happens.
-	 * All services receive their dependencies via constructor injection.
-	 *
-	 * @param WPDI\Resolver $resolver Service resolver.
-	 * @return void
-	 */
-	protected function bootstrap( WPDI\Resolver $resolver ): void {
-		// Resolve the main application with all its dependencies.
-		$app = $resolver->get( AgenticEndpoints\Application::class );
-
-		// Initialize the application (registers WordPress hooks).
-		$app->run();
-	}
-}
-
 // Initialize the plugin.
-new Agentic_Endpoints_Plugin( __FILE__ );
-
-// Register activation hook.
-register_activation_hook( __FILE__, static fn() => flush_rewrite_rules() );
-
-// Register deactivation hook.
-register_deactivation_hook( __FILE__, static fn() => flush_rewrite_rules() );
+new AgenticEndpoints\Plugin(__FILE__);
