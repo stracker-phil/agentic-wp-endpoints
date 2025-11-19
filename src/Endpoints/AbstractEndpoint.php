@@ -13,50 +13,19 @@ use WP_Error;
  */
 abstract class AbstractEndpoint {
 
-	/**
-	 * REST API namespace.
-	 *
-	 * @var string
-	 */
 	protected string $namespace = 'agentic/v1';
 
-	/**
-	 * Register the REST route.
-	 *
-	 * @return void
-	 */
 	abstract public function register(): void;
 
-	/**
-	 * Get the route path.
-	 *
-	 * @return string
-	 */
-	abstract protected function get_route(): string;
+	abstract protected function define_route(): string;
 
-	/**
-	 * Get the HTTP method(s) for this endpoint.
-	 *
-	 * @return string|array
-	 */
-	abstract protected function get_methods(): array|string;
+	abstract protected function define_methods(): array|string;
 
-	/**
-	 * Handle the REST request.
-	 *
-	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	abstract public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response;
-
-	/**
-	 * Get the arguments schema for the endpoint.
-	 *
-	 * @return array
-	 */
-	protected function get_args(): array {
+	protected function define_args(): array {
 		return [];
 	}
+
+	abstract public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response;
 
 	/**
 	 * Check if the request has permission.
@@ -77,43 +46,23 @@ abstract class AbstractEndpoint {
 		return true;
 	}
 
-	/**
-	 * Register the route with WordPress.
-	 *
-	 * @return bool
-	 */
 	protected function register_route(): bool {
 		return register_rest_route(
 			$this->namespace,
-			$this->get_route(),
+			$this->define_route(),
 			[
-				'methods'             => $this->get_methods(),
-				'callback'            => [ $this, 'handle' ],
-				'permission_callback' => [ $this, 'check_permission' ],
-				'args'                => $this->get_args(),
+				'methods'             => $this->define_methods(),
+				'callback'            => $this->handle( ... ),
+				'permission_callback' => $this->check_permission( ... ),
+				'args'                => $this->define_args(),
 			]
 		);
 	}
 
-	/**
-	 * Create a success response.
-	 *
-	 * @param mixed $data   Response data.
-	 * @param int   $status HTTP status code.
-	 * @return WP_REST_Response
-	 */
 	protected function success( mixed $data, int $status = 200 ): WP_REST_Response {
 		return new WP_REST_Response( $data, $status );
 	}
 
-	/**
-	 * Create an error response.
-	 *
-	 * @param string $code    Error code.
-	 * @param string $message Error message.
-	 * @param int    $status  HTTP status code.
-	 * @return WP_Error
-	 */
 	protected function error( string $code, string $message, int $status = 400 ): WP_Error {
 		return new WP_Error( $code, $message, [ 'status' => $status ] );
 	}

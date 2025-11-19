@@ -15,55 +15,25 @@ use Exception;
  */
 class GetPostEndpoint extends AbstractEndpoint {
 
-	/**
-	 * Blocks to Markdown converter.
-	 *
-	 * @var BlocksToMarkdown
-	 */
 	private BlocksToMarkdown $converter;
 
-	/**
-	 * Constructor.
-	 *
-	 * @param BlocksToMarkdown $converter Blocks to Markdown converter.
-	 */
 	public function __construct( BlocksToMarkdown $converter ) {
 		$this->converter = $converter;
 	}
 
-	/**
-	 * Register the REST route.
-	 *
-	 * @return void
-	 */
 	public function register(): void {
 		$this->register_route();
 	}
 
-	/**
-	 * Get the route path.
-	 *
-	 * @return string
-	 */
-	protected function get_route(): string {
+	protected function define_route(): string {
 		return '/agentic-post';
 	}
 
-	/**
-	 * Get the HTTP method(s) for this endpoint.
-	 *
-	 * @return string
-	 */
-	protected function get_methods(): string {
+	protected function define_methods(): string {
 		return 'GET';
 	}
 
-	/**
-	 * Get the arguments schema for the endpoint.
-	 *
-	 * @return array
-	 */
-	protected function get_args(): array {
+	protected function define_args(): array {
 		return [
 			'post_id' => [
 				'description'       => __( 'Post ID to convert to Markdown.', 'agentic-endpoints' ),
@@ -74,12 +44,6 @@ class GetPostEndpoint extends AbstractEndpoint {
 		];
 	}
 
-	/**
-	 * Handle the REST request.
-	 *
-	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response|WP_Error
-	 */
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post_id = $request->get_param( 'post_id' );
 

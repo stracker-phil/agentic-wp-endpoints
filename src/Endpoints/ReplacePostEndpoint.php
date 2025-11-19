@@ -11,59 +11,29 @@ use AgenticEndpoints\Converter\MarkdownToBlocks;
 use Exception;
 
 /**
- * REST endpoint for replacing post content with Markdown converted to blocks.
+ * REST endpoint for replacing the post-content with Markdown converted to blocks.
  */
 class ReplacePostEndpoint extends AbstractEndpoint {
 
-	/**
-	 * Markdown to blocks converter.
-	 *
-	 * @var MarkdownToBlocks
-	 */
 	private MarkdownToBlocks $converter;
 
-	/**
-	 * Constructor.
-	 *
-	 * @param MarkdownToBlocks $converter Markdown to blocks converter.
-	 */
 	public function __construct( MarkdownToBlocks $converter ) {
 		$this->converter = $converter;
 	}
 
-	/**
-	 * Register the REST route.
-	 *
-	 * @return void
-	 */
 	public function register(): void {
 		$this->register_route();
 	}
 
-	/**
-	 * Get the route path.
-	 *
-	 * @return string
-	 */
-	protected function get_route(): string {
+	protected function define_route(): string {
 		return '/agentic-post';
 	}
 
-	/**
-	 * Get the HTTP method(s) for this endpoint.
-	 *
-	 * @return string
-	 */
-	protected function get_methods(): string {
+	protected function define_methods(): string {
 		return 'POST';
 	}
 
-	/**
-	 * Get the arguments schema for the endpoint.
-	 *
-	 * @return array
-	 */
-	protected function get_args(): array {
+	protected function define_args(): array {
 		return [
 			'markdown' => [
 				'description'       => __( 'Markdown content to convert to Gutenberg blocks.', 'agentic-endpoints' ),
@@ -74,12 +44,6 @@ class ReplacePostEndpoint extends AbstractEndpoint {
 		];
 	}
 
-	/**
-	 * Handle the REST request.
-	 *
-	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response|WP_Error
-	 */
 	public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response {
 		$markdown = $request->get_param( 'markdown' );
 
