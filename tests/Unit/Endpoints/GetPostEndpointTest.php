@@ -7,7 +7,7 @@ namespace AgenticEndpoints\Tests\Unit\Endpoints;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
-use AgenticEndpoints\Endpoints\ToMarkdownEndpoint;
+use AgenticEndpoints\Endpoints\GetPostEndpoint;
 use AgenticEndpoints\Converter\BlocksToMarkdown;
 use League\HTMLToMarkdown\HtmlConverter;
 use WP_REST_Request;
@@ -16,11 +16,11 @@ use WP_Error;
 use WP_Post;
 
 /**
- * Unit tests for ToMarkdownEndpoint.
+ * Unit tests for GetPostEndpoint.
  */
-class ToMarkdownEndpointTest extends TestCase {
+class GetPostEndpointTest extends TestCase {
 
-	private ToMarkdownEndpoint $endpoint;
+	private GetPostEndpoint $endpoint;
 	private BlocksToMarkdown $converter;
 
 	protected function setUp(): void {
@@ -31,7 +31,7 @@ class ToMarkdownEndpointTest extends TestCase {
 			'hard_break' => true,
 		] );
 		$this->converter = new BlocksToMarkdown( $htmlConverter );
-		$this->endpoint  = new ToMarkdownEndpoint( $this->converter );
+		$this->endpoint  = new GetPostEndpoint( $this->converter );
 
 		// Reset global mocks.
 		global $registered_rest_routes, $mock_posts, $mock_parsed_blocks;
@@ -45,7 +45,7 @@ class ToMarkdownEndpointTest extends TestCase {
 	// =========================
 
 	/**
-	 * GIVEN a ToMarkdownEndpoint instance
+	 * GIVEN a GetPostEndpoint instance
 	 * WHEN registering the route
 	 * THEN it registers with correct namespace, route, method, and args
 	 */

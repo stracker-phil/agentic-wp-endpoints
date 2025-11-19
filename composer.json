@@ -5,7 +5,7 @@
   "license": "GPL-2.0-or-later",
   "require": {
     "php": "^8.1",
-    "stracker-phil/wpdi": "^1.0",
+    "stracker-phil/wpdi": "dev-main",
     "erusev/parsedown": "^1.7",
     "league/html-to-markdown": "^5.1"
   },

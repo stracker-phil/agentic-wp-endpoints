@@ -11,9 +11,9 @@ use AgenticEndpoints\Converter\BlocksToMarkdown;
 use Exception;
 
 /**
- * REST endpoint for converting Gutenberg blocks to Markdown.
+ * REST endpoint for getting a post as Markdown.
  */
-class ToMarkdownEndpoint extends AbstractEndpoint {
+class GetPostEndpoint extends AbstractEndpoint {
 
 	/**
 	 * Blocks to Markdown converter.

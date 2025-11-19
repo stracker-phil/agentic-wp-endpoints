@@ -8,8 +8,8 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
 use AgenticEndpoints\Application;
-use AgenticEndpoints\Endpoints\ToBlocksEndpoint;
-use AgenticEndpoints\Endpoints\ToMarkdownEndpoint;
+use AgenticEndpoints\Endpoints\GetPostEndpoint;
+use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
 use AgenticEndpoints\Converter\MarkdownToBlocks;
 use AgenticEndpoints\Converter\BlocksToMarkdown;
 use Parsedown;
@@ -21,8 +21,8 @@ use League\HTMLToMarkdown\HtmlConverter;
 class ApplicationTest extends TestCase {
 
 	private Application $application;
-	private ToBlocksEndpoint $toBlocksEndpoint;
-	private ToMarkdownEndpoint $toMarkdownEndpoint;
+	private ReplacePostEndpoint $replacePostEndpoint;
+	private GetPostEndpoint $getPostEndpoint;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -38,9 +38,9 @@ class ApplicationTest extends TestCase {
 		] );
 		$blocksToMarkdown = new BlocksToMarkdown( $htmlConverter );
 
-		$this->toBlocksEndpoint   = new ToBlocksEndpoint( $markdownToBlocks );
-		$this->toMarkdownEndpoint = new ToMarkdownEndpoint( $blocksToMarkdown );
-		$this->application        = new Application( $this->toBlocksEndpoint, $this->toMarkdownEndpoint );
+		$this->replacePostEndpoint = new ReplacePostEndpoint( $markdownToBlocks );
+		$this->getPostEndpoint     = new GetPostEndpoint( $blocksToMarkdown );
+		$this->application         = new Application( $this->replacePostEndpoint, $this->getPostEndpoint );
 
 		// Reset global mocks.
 		global $added_actions, $registered_rest_routes;
@@ -59,7 +59,7 @@ class ApplicationTest extends TestCase {
 	 */
 	#[Test]
 	public function it_accepts_endpoints_via_constructor(): void {
-		$application = new Application( $this->toBlocksEndpoint, $this->toMarkdownEndpoint );
+		$application = new Application( $this->replacePostEndpoint, $this->getPostEndpoint );
 
 		$this->assertInstanceOf( Application::class, $application );
 	}

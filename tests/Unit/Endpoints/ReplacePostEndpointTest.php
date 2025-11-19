@@ -7,7 +7,7 @@ namespace AgenticEndpoints\Tests\Unit\Endpoints;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
-use AgenticEndpoints\Endpoints\ToBlocksEndpoint;
+use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
 use AgenticEndpoints\Converter\MarkdownToBlocks;
 use Parsedown;
 use WP_REST_Request;
@@ -15,11 +15,11 @@ use WP_REST_Response;
 use WP_Error;
 
 /**
- * Unit tests for ToBlocksEndpoint.
+ * Unit tests for ReplacePostEndpoint.
  */
-class ToBlocksEndpointTest extends TestCase {
+class ReplacePostEndpointTest extends TestCase {
 
-	private ToBlocksEndpoint $endpoint;
+	private ReplacePostEndpoint $endpoint;
 	private MarkdownToBlocks $converter;
 
 	protected function setUp(): void {
@@ -28,7 +28,7 @@ class ToBlocksEndpointTest extends TestCase {
 		$parsedown = new Parsedown();
 		$parsedown->setSafeMode( true );
 		$this->converter = new MarkdownToBlocks( $parsedown );
-		$this->endpoint  = new ToBlocksEndpoint( $this->converter );
+		$this->endpoint  = new ReplacePostEndpoint( $this->converter );
 
 		// Reset global mocks.
 		global $registered_rest_routes;
@@ -40,7 +40,7 @@ class ToBlocksEndpointTest extends TestCase {
 	// =========================
 
 	/**
-	 * GIVEN a ToBlocksEndpoint instance
+	 * GIVEN a ReplacePostEndpoint instance
 	 * WHEN registering the route
 	 * THEN it registers with correct namespace, route, method, and args
 	 */

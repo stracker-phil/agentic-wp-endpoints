@@ -4,8 +4,8 @@ declare( strict_types = 1 );
 
 namespace AgenticEndpoints;
 
-use AgenticEndpoints\Endpoints\ToBlocksEndpoint;
-use AgenticEndpoints\Endpoints\ToMarkdownEndpoint;
+use AgenticEndpoints\Endpoints\GetPostEndpoint;
+use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
 
 /**
  * Main application class for Agentic Endpoints plugin.
@@ -27,16 +27,16 @@ class Application {
 	 *
 	 * Dependencies are injected by WPDI autowiring.
 	 *
-	 * @param ToBlocksEndpoint   $to_blocks_endpoint   Markdown to blocks endpoint.
-	 * @param ToMarkdownEndpoint $to_markdown_endpoint Blocks to markdown endpoint.
+	 * @param ReplacePostEndpoint $replace_post_endpoint Markdown to blocks endpoint.
+	 * @param GetPostEndpoint     $get_post_endpoint     Post to markdown endpoint.
 	 */
 	public function __construct(
-		ToBlocksEndpoint $to_blocks_endpoint,
-		ToMarkdownEndpoint $to_markdown_endpoint
+		ReplacePostEndpoint $replace_post_endpoint,
+		GetPostEndpoint $get_post_endpoint
 	) {
 		$this->endpoints = [
-			$to_blocks_endpoint,
-			$to_markdown_endpoint,
+			$replace_post_endpoint,
+			$get_post_endpoint,
 		];
 	}
 
