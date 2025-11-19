@@ -6,6 +6,7 @@ namespace AgenticEndpoints\Tests\Unit\Endpoints;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use AgenticEndpoints\Endpoints\ToMarkdownEndpoint;
 use AgenticEndpoints\Converter\BlocksToMarkdown;
 use League\HTMLToMarkdown\HtmlConverter;
@@ -43,8 +44,13 @@ class ToMarkdownEndpointTest extends TestCase {
 	// Route Configuration Tests
 	// =========================
 
+	/**
+	 * GIVEN a ToMarkdownEndpoint instance
+	 * WHEN registering the route
+	 * THEN it registers with correct namespace, route, method, and args
+	 */
 	#[Test]
-	public function it_registers_correct_route(): void {
+	public function it_registers_correct_route_configuration(): void {
 		global $registered_rest_routes;
 
 		$this->endpoint->register();
@@ -52,36 +58,12 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertCount( 1, $registered_rest_routes );
 		$this->assertEquals( 'agentic/v1', $registered_rest_routes[0]['namespace'] );
 		$this->assertEquals( '/agentic-post', $registered_rest_routes[0]['route'] );
-	}
-
-	#[Test]
-	public function it_uses_get_method(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
-
 		$this->assertEquals( 'GET', $registered_rest_routes[0]['args']['methods'] );
-	}
-
-	#[Test]
-	public function it_has_required_post_id_parameter(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
 
 		$args = $registered_rest_routes[0]['args']['args'];
 		$this->assertArrayHasKey( 'post_id', $args );
 		$this->assertEquals( 'integer', $args['post_id']['type'] );
 		$this->assertTrue( $args['post_id']['required'] );
-	}
-
-	#[Test]
-	public function it_does_not_have_content_parameter(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
-
-		$args = $registered_rest_routes[0]['args']['args'];
 		$this->assertArrayNotHasKey( 'content', $args );
 	}
 
@@ -89,6 +71,11 @@ class ToMarkdownEndpointTest extends TestCase {
 	// Handle Method Tests - Success Cases
 	// =========================
 
+	/**
+	 * GIVEN a valid post with content
+	 * WHEN calling the endpoint
+	 * THEN post content is converted to markdown with all metadata
+	 */
 	#[Test]
 	public function it_converts_post_content_to_markdown(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -122,6 +109,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertEquals( 'Post content', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a valid post
+	 * WHEN calling the endpoint
+	 * THEN all expected metadata fields are returned
+	 */
 	#[Test]
 	public function it_returns_all_post_metadata(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -160,8 +152,16 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertEquals( '2024-06-02 12:30:00', $data['post_modified'] );
 	}
 
+	/**
+	 * GIVEN posts with supported or unsupported blocks
+	 * WHEN converting to markdown
+	 * THEN the has_html_fallback flag is set correctly
+	 *
+	 * @dataProvider html_fallback_provider
+	 */
 	#[Test]
-	public function it_includes_has_html_fallback_flag(): void {
+	#[DataProvider( 'html_fallback_provider' )]
+	public function it_sets_html_fallback_flag_correctly( array $blocks, bool $expected_fallback ): void {
 		global $mock_posts, $mock_parsed_blocks;
 
 		$post               = new WP_Post( 789 );
@@ -169,14 +169,7 @@ class ToMarkdownEndpointTest extends TestCase {
 		$post->post_title   = 'Test';
 		$mock_posts[789]    = $post;
 
-		$mock_parsed_blocks = [
-			[
-				'blockName'   => 'core/gallery',
-				'attrs'       => [],
-				'innerHTML'   => '<figure>Gallery</figure>',
-				'innerBlocks' => [],
-			],
-		];
+		$mock_parsed_blocks = $blocks;
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'post_id', 789 );
@@ -184,50 +177,55 @@ class ToMarkdownEndpointTest extends TestCase {
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
 
-		$this->assertTrue( $data['has_html_fallback'] );
+		$this->assertEquals( $expected_fallback, $data['has_html_fallback'] );
 	}
 
-	#[Test]
-	public function it_returns_false_for_has_html_fallback_when_all_supported(): void {
-		global $mock_posts, $mock_parsed_blocks;
-
-		$post               = new WP_Post( 111 );
-		$post->post_content = 'content';
-		$post->post_title   = 'Test';
-		$mock_posts[111]    = $post;
-
-		$mock_parsed_blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Supported</p>',
-				'innerBlocks' => [],
+	public static function html_fallback_provider(): array {
+		return [
+			'unsupported block' => [
+				[
+					[
+						'blockName'   => 'core/gallery',
+						'attrs'       => [],
+						'innerHTML'   => '<figure>Gallery</figure>',
+						'innerBlocks' => [],
+					],
+				],
+				true,
 			],
-			[
-				'blockName'   => 'core/heading',
-				'attrs'       => [ 'level' => 1 ],
-				'innerHTML'   => '<h1>Also supported</h1>',
-				'innerBlocks' => [],
+			'all supported blocks' => [
+				[
+					[
+						'blockName'   => 'core/paragraph',
+						'attrs'       => [],
+						'innerHTML'   => '<p>Supported</p>',
+						'innerBlocks' => [],
+					],
+					[
+						'blockName'   => 'core/heading',
+						'attrs'       => [ 'level' => 1 ],
+						'innerHTML'   => '<h1>Also supported</h1>',
+						'innerBlocks' => [],
+					],
+				],
+				false,
 			],
 		];
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 111 );
-
-		$response = $this->endpoint->handle( $request );
-		$data     = $response->get_data();
-
-		$this->assertFalse( $data['has_html_fallback'] );
 	}
 
 	// =========================
 	// Handle Method Tests - Error Cases
 	// =========================
 
+	/**
+	 * GIVEN a non-existent post ID
+	 * WHEN calling the endpoint
+	 * THEN a not found error is returned
+	 */
 	#[Test]
 	public function it_returns_error_for_non_existent_post(): void {
 		global $mock_posts;
-		$mock_posts = []; // No posts.
+		$mock_posts = [];
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'post_id', 999 );
@@ -243,6 +241,11 @@ class ToMarkdownEndpointTest extends TestCase {
 	// Edge Case Tests
 	// =========================
 
+	/**
+	 * GIVEN a post with empty content
+	 * WHEN calling the endpoint
+	 * THEN empty markdown is returned
+	 */
 	#[Test]
 	public function it_handles_empty_post_content(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -265,6 +268,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertEquals( '', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a post with blocks containing null blockName
+	 * WHEN converting to markdown
+	 * THEN those blocks are skipped
+	 */
 	#[Test]
 	public function it_handles_blocks_with_no_blockname(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -298,6 +306,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertEquals( 'Real content', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a post with complex block structure
+	 * WHEN converting to markdown
+	 * THEN all blocks are correctly converted
+	 */
 	#[Test]
 	public function it_handles_complex_block_structure(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -339,6 +352,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertStringContainsString( '```php', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a post with unicode content
+	 * WHEN converting to markdown
+	 * THEN unicode characters are preserved
+	 */
 	#[Test]
 	public function it_handles_unicode_in_post_content(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -368,6 +386,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertStringContainsString( '你好', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a post with multiple blocks
+	 * WHEN converting to markdown
+	 * THEN all blocks are included
+	 */
 	#[Test]
 	public function it_handles_multiple_blocks(): void {
 		global $mock_posts, $mock_parsed_blocks;
@@ -402,6 +425,11 @@ class ToMarkdownEndpointTest extends TestCase {
 		$this->assertStringContainsString( 'Content', $data['markdown'] );
 	}
 
+	/**
+	 * GIVEN a post with different status
+	 * WHEN calling the endpoint
+	 * THEN the status is correctly returned
+	 */
 	#[Test]
 	public function it_handles_different_post_statuses(): void {
 		global $mock_posts, $mock_parsed_blocks;

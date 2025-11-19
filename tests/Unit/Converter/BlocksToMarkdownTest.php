@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare( strict_types = 1 );
 
 namespace AgenticEndpoints\Tests\Unit\Converter;
 
@@ -19,92 +19,108 @@ class BlocksToMarkdownTest extends TestCase {
 
 	protected function setUp(): void {
 		parent::setUp();
-		$htmlConverter = new HtmlConverter([
+		$htmlConverter   = new HtmlConverter( [
 			'strip_tags' => false,
 			'hard_break' => true,
-		]);
-		$this->converter = new BlocksToMarkdown($htmlConverter);
+		] );
+		$this->converter = new BlocksToMarkdown( $htmlConverter );
 	}
 
 	// =========================
 	// Empty/Basic Input Tests
 	// =========================
 
+	/**
+	 * GIVEN empty blocks array
+	 * WHEN converting to markdown
+	 * THEN empty markdown is returned with no fallback flag
+	 */
 	#[Test]
 	public function it_returns_empty_markdown_for_empty_blocks(): void {
-		$result = $this->converter->convert([]);
+		$result = $this->converter->convert( [] );
 
-		$this->assertArrayHasKey('markdown', $result);
-		$this->assertArrayHasKey('has_html_fallback', $result);
-		$this->assertEquals('', $result['markdown']);
-		$this->assertFalse($result['has_html_fallback']);
+		$this->assertArrayHasKey( 'markdown', $result );
+		$this->assertArrayHasKey( 'has_html_fallback', $result );
+		$this->assertEquals( '', $result['markdown'] );
+		$this->assertFalse( $result['has_html_fallback'] );
 	}
 
+	/**
+	 * GIVEN blocks with empty or null blockName
+	 * WHEN converting to markdown
+	 * THEN those blocks are skipped
+	 *
+	 * @dataProvider empty_block_name_provider
+	 */
 	#[Test]
-	public function it_skips_blocks_with_empty_block_name(): void {
+	#[DataProvider( 'empty_block_name_provider' )]
+	public function it_skips_blocks_with_empty_or_null_block_name( $block_name ): void {
 		$blocks = [
 			[
-				'blockName'   => '',
+				'blockName'   => $block_name,
 				'attrs'       => [],
 				'innerHTML'   => 'Some content',
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('', $result['markdown']);
+		$this->assertEquals( '', $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_skips_blocks_with_null_block_name(): void {
-		$blocks = [
-			[
-				'blockName'   => null,
-				'attrs'       => [],
-				'innerHTML'   => 'Some content',
-				'innerBlocks' => [],
-			],
+	public static function empty_block_name_provider(): array {
+		return [
+			'empty string' => [ '' ],
+			'null value'   => [ null ],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('', $result['markdown']);
 	}
 
 	// =========================
 	// Heading Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/heading block at any level (1-6)
+	 * WHEN converting to markdown
+	 * THEN the correct heading prefix is generated
+	 *
+	 * @dataProvider heading_level_provider
+	 */
 	#[Test]
-	#[DataProvider('headingLevelProvider')]
-	public function it_converts_headings_at_all_levels(int $level, string $expectedPrefix): void {
+	#[DataProvider( 'heading_level_provider' )]
+	public function it_converts_headings_at_all_levels( int $level, string $expected_prefix ): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/heading',
-				'attrs'       => ['level' => $level],
+				'attrs'       => [ 'level' => $level ],
 				'innerHTML'   => "<h{$level}>Test Heading</h{$level}>",
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals("{$expectedPrefix} Test Heading", $result['markdown']);
-		$this->assertFalse($result['has_html_fallback']);
+		$this->assertEquals( "{$expected_prefix} Test Heading", $result['markdown'] );
+		$this->assertFalse( $result['has_html_fallback'] );
 	}
 
-	public static function headingLevelProvider(): array {
+	public static function heading_level_provider(): array {
 		return [
-			'h1' => [1, '#'],
-			'h2' => [2, '##'],
-			'h3' => [3, '###'],
-			'h4' => [4, '####'],
-			'h5' => [5, '#####'],
-			'h6' => [6, '######'],
+			'h1' => [ 1, '#' ],
+			'h2' => [ 2, '##' ],
+			'h3' => [ 3, '###' ],
+			'h4' => [ 4, '####' ],
+			'h5' => [ 5, '#####' ],
+			'h6' => [ 6, '######' ],
 		];
 	}
 
+	/**
+	 * GIVEN a core/heading block without level attribute
+	 * WHEN converting to markdown
+	 * THEN it defaults to h2 level
+	 */
 	#[Test]
 	public function it_defaults_to_h2_when_level_not_specified(): void {
 		$blocks = [
@@ -116,160 +132,78 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('## Test Heading', $result['markdown']);
+		$this->assertEquals( '## Test Heading', $result['markdown'] );
 	}
 
+	/**
+	 * GIVEN a core/heading block with inline formatting
+	 * WHEN converting to markdown
+	 * THEN the formatting is preserved in markdown syntax
+	 */
 	#[Test]
 	public function it_converts_heading_with_inline_formatting(): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/heading',
-				'attrs'       => ['level' => 2],
+				'attrs'       => [ 'level' => 2 ],
 				'innerHTML'   => '<h2>Heading with <strong>bold</strong></h2>',
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('## Heading with **bold**', $result['markdown']);
+		$this->assertEquals( '## Heading with **bold**', $result['markdown'] );
 	}
 
 	// =========================
 	// Paragraph Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/paragraph block with inline HTML formatting
+	 * WHEN converting to markdown
+	 * THEN the formatting is converted to markdown syntax
+	 *
+	 * @dataProvider paragraph_inline_formatting_provider
+	 */
 	#[Test]
-	public function it_converts_simple_paragraph(): void {
+	#[DataProvider( 'paragraph_inline_formatting_provider' )]
+	public function it_converts_paragraph_with_inline_formatting( string $inner_html, string $expected_markdown ): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/paragraph',
 				'attrs'       => [],
-				'innerHTML'   => '<p>This is a paragraph.</p>',
+				'innerHTML'   => $inner_html,
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('This is a paragraph.', $result['markdown']);
-		$this->assertFalse($result['has_html_fallback']);
+		$this->assertEquals( $expected_markdown, $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_converts_paragraph_with_strong_tag(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Text with <strong>bold</strong> word.</p>',
-				'innerBlocks' => [],
-			],
+	public static function paragraph_inline_formatting_provider(): array {
+		return [
+			'simple text'           => [ '<p>This is a paragraph.</p>', 'This is a paragraph.' ],
+			'strong tag'            => [ '<p>Text with <strong>bold</strong> word.</p>', 'Text with **bold** word.' ],
+			'b tag'                 => [ '<p>Text with <b>bold</b> word.</p>', 'Text with **bold** word.' ],
+			'em tag'                => [ '<p>Text with <em>italic</em> word.</p>', 'Text with *italic* word.' ],
+			'i tag'                 => [ '<p>Text with <i>italic</i> word.</p>', 'Text with *italic* word.' ],
+			'code tag'              => [ '<p>Use the <code>convert()</code> function.</p>', 'Use the `convert()` function.' ],
+			'link'                  => [ '<p>Visit <a href="https://example.com">Example</a> site.</p>', 'Visit [Example](https://example.com) site.' ],
+			'image'                 => [ '<p><img src="https://example.com/img.png" alt="Test" /></p>', '![Test](https://example.com/img.png)' ],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Text with **bold** word.', $result['markdown']);
 	}
 
-	#[Test]
-	public function it_converts_paragraph_with_b_tag(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Text with <b>bold</b> word.</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Text with **bold** word.', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_paragraph_with_em_tag(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Text with <em>italic</em> word.</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Text with *italic* word.', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_paragraph_with_i_tag(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Text with <i>italic</i> word.</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Text with *italic* word.', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_paragraph_with_code_tag(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Use the <code>convert()</code> function.</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Use the `convert()` function.', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_paragraph_with_link(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Visit <a href="https://example.com">Example</a> site.</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('Visit [Example](https://example.com) site.', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_paragraph_with_image(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p><img src="https://example.com/img.png" alt="Test" /></p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('![Test](https://example.com/img.png)', $result['markdown']);
-	}
-
+	/**
+	 * GIVEN a core/paragraph block with br tag
+	 * WHEN converting to markdown
+	 * THEN line breaks are preserved
+	 */
 	#[Test]
 	public function it_converts_paragraph_with_br_tag(): void {
 		$blocks = [
@@ -281,49 +215,64 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertStringContainsString("Line one\nLine two", $result['markdown']);
+		$this->assertStringContainsString( "Line one\nLine two", $result['markdown'] );
 	}
 
 	// =========================
 	// Code Block Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/code block
+	 * WHEN converting to markdown
+	 * THEN fenced code block syntax is generated
+	 *
+	 * @dataProvider code_block_provider
+	 */
 	#[Test]
-	public function it_converts_code_block_without_language(): void {
+	#[DataProvider( 'code_block_provider' )]
+	public function it_converts_code_blocks( array $attrs, string $inner_html, string $expected_markdown ): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/code',
-				'attrs'       => [],
-				'innerHTML'   => '<pre class="wp-block-code"><code>const x = 1;</code></pre>',
+				'attrs'       => $attrs,
+				'innerHTML'   => $inner_html,
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$expected = "```\nconst x = 1;\n```";
-		$this->assertEquals($expected, $result['markdown']);
+		$this->assertEquals( $expected_markdown, $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_converts_code_block_with_language(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/code',
-				'attrs'       => ['language' => 'javascript'],
-				'innerHTML'   => '<pre class="wp-block-code"><code>const x = 1;</code></pre>',
-				'innerBlocks' => [],
+	public static function code_block_provider(): array {
+		return [
+			'without language' => [
+				[],
+				'<pre class="wp-block-code"><code>const x = 1;</code></pre>',
+				"```\nconst x = 1;\n```",
+			],
+			'with language'    => [
+				[ 'language' => 'javascript' ],
+				'<pre class="wp-block-code"><code>const x = 1;</code></pre>',
+				"```javascript\nconst x = 1;\n```",
+			],
+			'without code tags' => [
+				[],
+				'<pre>plain code</pre>',
+				"```\nplain code\n```",
 			],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$expected = "```javascript\nconst x = 1;\n```";
-		$this->assertEquals($expected, $result['markdown']);
 	}
 
+	/**
+	 * GIVEN a core/code block with HTML entities
+	 * WHEN converting to markdown
+	 * THEN entities are decoded
+	 */
 	#[Test]
 	public function it_decodes_html_entities_in_code(): void {
 		$blocks = [
@@ -335,31 +284,20 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertStringContainsString('<div>test</div>', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_handles_code_without_code_tags(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/code',
-				'attrs'       => [],
-				'innerHTML'   => '<pre>plain code</pre>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertStringContainsString('plain code', $result['markdown']);
+		$this->assertStringContainsString( '<div>test</div>', $result['markdown'] );
 	}
 
 	// =========================
 	// Quote Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/quote block
+	 * WHEN converting to markdown
+	 * THEN blockquote syntax is generated
+	 */
 	#[Test]
 	public function it_converts_simple_quote(): void {
 		$blocks = [
@@ -371,11 +309,16 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('> This is a quote.', $result['markdown']);
+		$this->assertEquals( '> This is a quote.', $result['markdown'] );
 	}
 
+	/**
+	 * GIVEN a core/quote block with inline formatting
+	 * WHEN converting to markdown
+	 * THEN both quote syntax and formatting are preserved
+	 */
 	#[Test]
 	public function it_converts_quote_with_inline_formatting(): void {
 		$blocks = [
@@ -387,69 +330,68 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('> Quote with **bold**', $result['markdown']);
+		$this->assertEquals( '> Quote with **bold**', $result['markdown'] );
 	}
 
 	// =========================
 	// List Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/list block
+	 * WHEN converting to markdown
+	 * THEN list syntax is generated based on ordered attribute
+	 *
+	 * @dataProvider list_provider
+	 */
 	#[Test]
-	public function it_converts_unordered_list(): void {
+	#[DataProvider( 'list_provider' )]
+	public function it_converts_lists( array $attrs, string $inner_html, string $expected_markdown ): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/list',
-				'attrs'       => ['ordered' => false],
-				'innerHTML'   => '<ul class="wp-block-list"><li>Item one</li><li>Item two</li><li>Item three</li></ul>',
+				'attrs'       => $attrs,
+				'innerHTML'   => $inner_html,
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$expected = "- Item one\n- Item two\n- Item three";
-		$this->assertEquals($expected, $result['markdown']);
+		$this->assertEquals( $expected_markdown, $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_converts_ordered_list(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/list',
-				'attrs'       => ['ordered' => true],
-				'innerHTML'   => '<ol class="wp-block-list"><li>First</li><li>Second</li><li>Third</li></ol>',
-				'innerBlocks' => [],
+	public static function list_provider(): array {
+		return [
+			'unordered list'         => [
+				[ 'ordered' => false ],
+				'<ul class="wp-block-list"><li>Item one</li><li>Item two</li><li>Item three</li></ul>',
+				"- Item one\n- Item two\n- Item three",
+			],
+			'ordered list'           => [
+				[ 'ordered' => true ],
+				'<ol class="wp-block-list"><li>First</li><li>Second</li><li>Third</li></ol>',
+				"1. First\n2. Second\n3. Third",
+			],
+			'default to unordered'   => [
+				[],
+				'<ul><li>Item</li></ul>',
+				'- Item',
 			],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$expected = "1. First\n2. Second\n3. Third";
-		$this->assertEquals($expected, $result['markdown']);
-	}
-
-	#[Test]
-	public function it_defaults_to_unordered_when_ordered_not_specified(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/list',
-				'attrs'       => [],
-				'innerHTML'   => '<ul><li>Item</li></ul>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('- Item', $result['markdown']);
 	}
 
 	// =========================
 	// Separator Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/separator block
+	 * WHEN converting to markdown
+	 * THEN horizontal rule syntax is generated
+	 */
 	#[Test]
 	public function it_converts_separator(): void {
 		$blocks = [
@@ -461,125 +403,109 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('---', $result['markdown']);
+		$this->assertEquals( '---', $result['markdown'] );
 	}
 
 	// =========================
 	// Image Tests
 	// =========================
 
+	/**
+	 * GIVEN a core/image block
+	 * WHEN converting to markdown
+	 * THEN image syntax is generated from attrs or HTML
+	 *
+	 * @dataProvider image_provider
+	 */
 	#[Test]
-	public function it_converts_image_from_attrs(): void {
+	#[DataProvider( 'image_provider' )]
+	public function it_converts_images( array $attrs, string $inner_html, string $expected_markdown ): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/image',
-				'attrs'       => [
-					'url' => 'https://example.com/image.png',
-					'alt' => 'Example image',
-				],
-				'innerHTML'   => '<figure><img src="https://example.com/image.png" alt="Example image"/></figure>',
+				'attrs'       => $attrs,
+				'innerHTML'   => $inner_html,
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('![Example image](https://example.com/image.png)', $result['markdown']);
+		$this->assertEquals( $expected_markdown, $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_converts_image_from_html_when_no_attrs(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/image',
-				'attrs'       => [],
-				'innerHTML'   => '<figure><img src="https://example.com/image.png" alt="Alt text"/></figure>',
-				'innerBlocks' => [],
+	public static function image_provider(): array {
+		return [
+			'from attrs'           => [
+				[ 'url' => 'https://example.com/image.png', 'alt' => 'Example image' ],
+				'<figure><img src="https://example.com/image.png" alt="Example image"/></figure>',
+				'![Example image](https://example.com/image.png)',
+			],
+			'from html when no attrs' => [
+				[],
+				'<figure><img src="https://example.com/image.png" alt="Alt text"/></figure>',
+				'![Alt text](https://example.com/image.png)',
+			],
+			'with empty alt'       => [
+				[ 'url' => 'https://example.com/image.png', 'alt' => '' ],
+				'',
+				'![](https://example.com/image.png)',
+			],
+			'no url available'     => [
+				[],
+				'<figure></figure>',
+				'',
 			],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('![Alt text](https://example.com/image.png)', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_returns_empty_for_image_without_url(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/image',
-				'attrs'       => [],
-				'innerHTML'   => '<figure></figure>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('', $result['markdown']);
-	}
-
-	#[Test]
-	public function it_converts_image_with_empty_alt(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/image',
-				'attrs'       => [
-					'url' => 'https://example.com/image.png',
-					'alt' => '',
-				],
-				'innerHTML'   => '',
-				'innerBlocks' => [],
-			],
-		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('![](https://example.com/image.png)', $result['markdown']);
 	}
 
 	// =========================
 	// Unsupported Block Tests
 	// =========================
 
+	/**
+	 * GIVEN an unsupported block type
+	 * WHEN converting to markdown
+	 * THEN HTML fallback comment is generated
+	 *
+	 * @dataProvider unsupported_block_provider
+	 */
 	#[Test]
-	public function it_falls_back_to_html_comment_for_unsupported_blocks(): void {
+	#[DataProvider( 'unsupported_block_provider' )]
+	public function it_handles_unsupported_blocks( string $block_name, string $inner_html, string $expected_content ): void {
 		$blocks = [
 			[
-				'blockName'   => 'core/gallery',
+				'blockName'   => $block_name,
 				'attrs'       => [],
-				'innerHTML'   => '<figure class="wp-block-gallery">Gallery content</figure>',
+				'innerHTML'   => $inner_html,
 				'innerBlocks' => [],
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertTrue($result['has_html_fallback']);
-		$this->assertStringContainsString('<!-- HTML BLOCK: core/gallery -->', $result['markdown']);
-		$this->assertStringContainsString('Gallery content', $result['markdown']);
-		$this->assertStringContainsString('<!-- END HTML BLOCK -->', $result['markdown']);
+		$this->assertTrue( $result['has_html_fallback'] );
+		$this->assertStringContainsString( "<!-- HTML BLOCK: {$block_name} -->", $result['markdown'] );
+
+		if ( ! empty( $inner_html ) ) {
+			$this->assertStringContainsString( '<!-- END HTML BLOCK -->', $result['markdown'] );
+		}
 	}
 
-	#[Test]
-	public function it_handles_unsupported_block_with_empty_html(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/spacer',
-				'attrs'       => [],
-				'innerHTML'   => '',
-				'innerBlocks' => [],
-			],
+	public static function unsupported_block_provider(): array {
+		return [
+			'gallery with content' => [ 'core/gallery', '<figure class="wp-block-gallery">Gallery content</figure>', 'Gallery content' ],
+			'spacer with no html'  => [ 'core/spacer', '', '' ],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertTrue($result['has_html_fallback']);
-		$this->assertEquals('<!-- HTML BLOCK: core/spacer -->', $result['markdown']);
 	}
 
+	/**
+	 * GIVEN only supported blocks
+	 * WHEN converting to markdown
+	 * THEN has_html_fallback is false
+	 */
 	#[Test]
 	public function it_sets_fallback_flag_only_when_unsupported_blocks_present(): void {
 		$blocks = [
@@ -591,21 +517,26 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertFalse($result['has_html_fallback']);
+		$this->assertFalse( $result['has_html_fallback'] );
 	}
 
 	// =========================
 	// Multiple Block Tests
 	// =========================
 
+	/**
+	 * GIVEN multiple blocks
+	 * WHEN converting to markdown
+	 * THEN blocks are joined with double newlines
+	 */
 	#[Test]
 	public function it_joins_multiple_blocks_with_double_newline(): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/heading',
-				'attrs'       => ['level' => 1],
+				'attrs'       => [ 'level' => 1 ],
 				'innerHTML'   => '<h1>Title</h1>',
 				'innerBlocks' => [],
 			],
@@ -617,17 +548,22 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals("# Title\n\nContent", $result['markdown']);
+		$this->assertEquals( "# Title\n\nContent", $result['markdown'] );
 	}
 
+	/**
+	 * GIVEN a complex document with multiple block types
+	 * WHEN converting to markdown
+	 * THEN all blocks are correctly converted
+	 */
 	#[Test]
 	public function it_converts_complex_document(): void {
 		$blocks = [
 			[
 				'blockName'   => 'core/heading',
-				'attrs'       => ['level' => 1],
+				'attrs'       => [ 'level' => 1 ],
 				'innerHTML'   => '<h1>Main Title</h1>',
 				'innerBlocks' => [],
 			],
@@ -639,13 +575,13 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 			[
 				'blockName'   => 'core/code',
-				'attrs'       => ['language' => 'php'],
+				'attrs'       => [ 'language' => 'php' ],
 				'innerHTML'   => '<pre class="wp-block-code"><code>echo "Hello";</code></pre>',
 				'innerBlocks' => [],
 			],
 			[
 				'blockName'   => 'core/list',
-				'attrs'       => ['ordered' => false],
+				'attrs'       => [ 'ordered' => false ],
 				'innerHTML'   => '<ul><li>Item 1</li><li>Item 2</li></ul>',
 				'innerBlocks' => [],
 			],
@@ -657,50 +593,61 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertStringContainsString('# Main Title', $result['markdown']);
-		$this->assertStringContainsString('**bold**', $result['markdown']);
-		$this->assertStringContainsString('```php', $result['markdown']);
-		$this->assertStringContainsString('- Item 1', $result['markdown']);
-		$this->assertStringContainsString('---', $result['markdown']);
-		$this->assertFalse($result['has_html_fallback']);
+		$this->assertStringContainsString( '# Main Title', $result['markdown'] );
+		$this->assertStringContainsString( '**bold**', $result['markdown'] );
+		$this->assertStringContainsString( '```php', $result['markdown'] );
+		$this->assertStringContainsString( '- Item 1', $result['markdown'] );
+		$this->assertStringContainsString( '---', $result['markdown'] );
+		$this->assertFalse( $result['has_html_fallback'] );
 	}
 
 	// =========================
 	// Edge Case Tests
 	// =========================
 
+	/**
+	 * GIVEN a block with missing optional keys
+	 * WHEN converting to markdown
+	 * THEN conversion handles it gracefully
+	 *
+	 * @dataProvider missing_keys_provider
+	 */
 	#[Test]
-	public function it_handles_missing_attrs_key(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'innerHTML'   => '<p>No attrs</p>',
-				'innerBlocks' => [],
-			],
-		];
+	#[DataProvider( 'missing_keys_provider' )]
+	public function it_handles_missing_optional_keys( array $block, string $expected_markdown ): void {
+		$result = $this->converter->convert( [ $block ] );
 
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('No attrs', $result['markdown']);
+		$this->assertEquals( $expected_markdown, $result['markdown'] );
 	}
 
-	#[Test]
-	public function it_handles_missing_inner_html_key(): void {
-		$blocks = [
-			[
-				'blockName'   => 'core/separator',
-				'attrs'       => [],
-				'innerBlocks' => [],
+	public static function missing_keys_provider(): array {
+		return [
+			'missing attrs key'      => [
+				[
+					'blockName'   => 'core/paragraph',
+					'innerHTML'   => '<p>No attrs</p>',
+					'innerBlocks' => [],
+				],
+				'No attrs',
+			],
+			'missing innerHTML key'  => [
+				[
+					'blockName'   => 'core/separator',
+					'attrs'       => [],
+					'innerBlocks' => [],
+				],
+				'---',
 			],
 		];
-
-		$result = $this->converter->convert($blocks);
-
-		$this->assertEquals('---', $result['markdown']);
 	}
 
+	/**
+	 * GIVEN a paragraph with HTML entities
+	 * WHEN converting to markdown
+	 * THEN entities are decoded
+	 */
 	#[Test]
 	public function it_decodes_html_entities_in_paragraph(): void {
 		$blocks = [
@@ -712,16 +659,21 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertStringContainsString('&', $result['markdown']);
-		$this->assertStringContainsString('<', $result['markdown']);
-		$this->assertStringContainsString('>', $result['markdown']);
+		$this->assertStringContainsString( '&', $result['markdown'] );
+		$this->assertStringContainsString( '<', $result['markdown'] );
+		$this->assertStringContainsString( '>', $result['markdown'] );
 	}
 
+	/**
+	 * GIVEN the converter is used multiple times
+	 * WHEN converting different block sets
+	 * THEN the fallback flag resets correctly
+	 */
 	#[Test]
 	public function it_resets_fallback_flag_on_each_convert(): void {
-		// First conversion with unsupported block
+		// First conversion with unsupported block.
 		$blocks1 = [
 			[
 				'blockName'   => 'core/gallery',
@@ -730,10 +682,10 @@ class BlocksToMarkdownTest extends TestCase {
 				'innerBlocks' => [],
 			],
 		];
-		$result1 = $this->converter->convert($blocks1);
-		$this->assertTrue($result1['has_html_fallback']);
+		$result1 = $this->converter->convert( $blocks1 );
+		$this->assertTrue( $result1['has_html_fallback'] );
 
-		// Second conversion with only supported blocks
+		// Second conversion with only supported blocks.
 		$blocks2 = [
 			[
 				'blockName'   => 'core/paragraph',
@@ -742,10 +694,15 @@ class BlocksToMarkdownTest extends TestCase {
 				'innerBlocks' => [],
 			],
 		];
-		$result2 = $this->converter->convert($blocks2);
-		$this->assertFalse($result2['has_html_fallback']);
+		$result2 = $this->converter->convert( $blocks2 );
+		$this->assertFalse( $result2['has_html_fallback'] );
 	}
 
+	/**
+	 * GIVEN paragraph with link containing extra attributes
+	 * WHEN converting to markdown
+	 * THEN only href is preserved in markdown
+	 */
 	#[Test]
 	public function it_handles_link_with_other_attributes(): void {
 		$blocks = [
@@ -757,11 +714,16 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('[Link](https://example.com)', $result['markdown']);
+		$this->assertEquals( '[Link](https://example.com)', $result['markdown'] );
 	}
 
+	/**
+	 * GIVEN paragraph with img where alt comes before src
+	 * WHEN converting to markdown
+	 * THEN image is correctly parsed
+	 */
 	#[Test]
 	public function it_handles_image_with_alt_before_src(): void {
 		$blocks = [
@@ -773,8 +735,8 @@ class BlocksToMarkdownTest extends TestCase {
 			],
 		];
 
-		$result = $this->converter->convert($blocks);
+		$result = $this->converter->convert( $blocks );
 
-		$this->assertEquals('![Test](https://example.com/img.png)', $result['markdown']);
+		$this->assertEquals( '![Test](https://example.com/img.png)', $result['markdown'] );
 	}
 }

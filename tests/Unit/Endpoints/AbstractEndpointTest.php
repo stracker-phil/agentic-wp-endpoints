@@ -1,11 +1,12 @@
 <?php
 
-declare(strict_types=1);
+declare( strict_types = 1 );
 
 namespace AgenticEndpoints\Tests\Unit\Endpoints;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use AgenticEndpoints\Endpoints\AbstractEndpoint;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -20,15 +21,15 @@ class TestableEndpoint extends AbstractEndpoint {
 	private string $method = 'GET';
 	private array $args = [];
 
-	public function setRoute(string $route): void {
+	public function setRoute( string $route ): void {
 		$this->route = $route;
 	}
 
-	public function setMethod(string $method): void {
+	public function setMethod( string $method ): void {
 		$this->method = $method;
 	}
 
-	public function setArgs(array $args): void {
+	public function setArgs( array $args ): void {
 		$this->args = $args;
 	}
 
@@ -52,13 +53,13 @@ class TestableEndpoint extends AbstractEndpoint {
 		return $this->success( [ 'test' => 'data' ] );
 	}
 
-	// Expose protected methods for testing
-	public function publicSuccess($data, int $status = 200): WP_REST_Response {
-		return $this->success($data, $status);
+	// Expose protected methods for testing.
+	public function publicSuccess( $data, int $status = 200 ): WP_REST_Response {
+		return $this->success( $data, $status );
 	}
 
-	public function publicError(string $code, string $message, int $status = 400): WP_Error {
-		return $this->error($code, $message, $status);
+	public function publicError( string $code, string $message, int $status = 400 ): WP_Error {
+		return $this->error( $code, $message, $status );
 	}
 
 	public function getNamespace(): string {
@@ -77,9 +78,9 @@ class AbstractEndpointTest extends TestCase {
 		parent::setUp();
 		$this->endpoint = new TestableEndpoint();
 
-		// Reset global mocks
+		// Reset global mocks.
 		global $mock_current_user_can, $registered_rest_routes;
-		$mock_current_user_can = null;
+		$mock_current_user_can  = null;
 		$registered_rest_routes = [];
 	}
 
@@ -87,205 +88,219 @@ class AbstractEndpointTest extends TestCase {
 	// Namespace Tests
 	// =========================
 
+	/**
+	 * GIVEN an endpoint instance
+	 * WHEN checking the namespace
+	 * THEN it returns the agentic/v1 namespace
+	 */
 	#[Test]
 	public function it_has_correct_namespace(): void {
-		$this->assertEquals('agentic/v1', $this->endpoint->getNamespace());
+		$this->assertEquals( 'agentic/v1', $this->endpoint->getNamespace() );
 	}
 
 	// =========================
 	// Success Response Tests
 	// =========================
 
+	/**
+	 * GIVEN various data types for success response
+	 * WHEN creating a success response
+	 * THEN the response contains the correct data and status
+	 *
+	 * @dataProvider success_response_provider
+	 */
 	#[Test]
-	public function it_creates_success_response_with_default_status(): void {
-		$data = ['key' => 'value'];
-		$response = $this->endpoint->publicSuccess($data);
+	#[DataProvider( 'success_response_provider' )]
+	public function it_creates_success_response( $data, int $status, $expected_data ): void {
+		$response = $this->endpoint->publicSuccess( $data, $status );
 
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertEquals($data, $response->get_data());
-		$this->assertEquals(200, $response->get_status());
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertEquals( $expected_data, $response->get_data() );
+		$this->assertEquals( $status, $response->get_status() );
 	}
 
-	#[Test]
-	public function it_creates_success_response_with_custom_status(): void {
-		$data = ['created' => true];
-		$response = $this->endpoint->publicSuccess($data, 201);
-
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertEquals($data, $response->get_data());
-		$this->assertEquals(201, $response->get_status());
-	}
-
-	#[Test]
-	public function it_creates_success_response_with_empty_data(): void {
-		$response = $this->endpoint->publicSuccess([]);
-
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertEquals([], $response->get_data());
-	}
-
-	#[Test]
-	public function it_creates_success_response_with_null_data(): void {
-		$response = $this->endpoint->publicSuccess(null);
-
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertNull($response->get_data());
-	}
-
-	#[Test]
-	public function it_creates_success_response_with_string_data(): void {
-		$response = $this->endpoint->publicSuccess('string data');
-
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertEquals('string data', $response->get_data());
+	public static function success_response_provider(): array {
+		return [
+			'array data with default status'  => [ [ 'key' => 'value' ], 200, [ 'key' => 'value' ] ],
+			'array data with custom status'   => [ [ 'created' => true ], 201, [ 'created' => true ] ],
+			'empty array'                     => [ [], 200, [] ],
+			'null data'                       => [ null, 200, null ],
+			'string data'                     => [ 'string data', 200, 'string data' ],
+		];
 	}
 
 	// =========================
 	// Error Response Tests
 	// =========================
 
+	/**
+	 * GIVEN an error code, message, and status
+	 * WHEN creating an error response
+	 * THEN the WP_Error contains the correct information
+	 *
+	 * @dataProvider error_response_provider
+	 */
 	#[Test]
-	public function it_creates_error_response_with_default_status(): void {
-		$error = $this->endpoint->publicError('test_error', 'Test message');
+	#[DataProvider( 'error_response_provider' )]
+	public function it_creates_error_response( string $code, string $message, int $status ): void {
+		$error = $this->endpoint->publicError( $code, $message, $status );
 
-		$this->assertInstanceOf(WP_Error::class, $error);
-		$this->assertEquals('test_error', $error->get_error_code());
-		$this->assertEquals('Test message', $error->get_error_message());
-		$this->assertEquals(['status' => 400], $error->get_error_data());
+		$this->assertInstanceOf( WP_Error::class, $error );
+		$this->assertEquals( $code, $error->get_error_code() );
+		$this->assertEquals( $message, $error->get_error_message() );
+		$this->assertEquals( [ 'status' => $status ], $error->get_error_data() );
 	}
 
-	#[Test]
-	public function it_creates_error_response_with_custom_status(): void {
-		$error = $this->endpoint->publicError('not_found', 'Resource not found', 404);
-
-		$this->assertInstanceOf(WP_Error::class, $error);
-		$this->assertEquals('not_found', $error->get_error_code());
-		$this->assertEquals('Resource not found', $error->get_error_message());
-		$this->assertEquals(['status' => 404], $error->get_error_data());
-	}
-
-	#[Test]
-	public function it_creates_error_response_with_server_error_status(): void {
-		$error = $this->endpoint->publicError('server_error', 'Internal error', 500);
-
-		$this->assertEquals(['status' => 500], $error->get_error_data());
+	public static function error_response_provider(): array {
+		return [
+			'default bad request'  => [ 'test_error', 'Test message', 400 ],
+			'not found'            => [ 'not_found', 'Resource not found', 404 ],
+			'server error'         => [ 'server_error', 'Internal error', 500 ],
+		];
 	}
 
 	// =========================
 	// Permission Check Tests
 	// =========================
 
+	/**
+	 * GIVEN a user with or without edit_posts capability
+	 * WHEN checking permission
+	 * THEN access is granted or denied appropriately
+	 *
+	 * @dataProvider permission_provider
+	 */
 	#[Test]
-	public function it_allows_access_when_user_can_edit_posts(): void {
+	#[DataProvider( 'permission_provider' )]
+	public function it_checks_user_permission( bool $can_edit, bool $expected_allowed ): void {
 		global $mock_current_user_can;
-		$mock_current_user_can = true;
+		$mock_current_user_can = $can_edit;
 
 		$request = new WP_REST_Request();
-		$result = $this->endpoint->check_permission($request);
+		$result  = $this->endpoint->check_permission( $request );
 
-		$this->assertTrue($result);
+		if ( $expected_allowed ) {
+			$this->assertTrue( $result );
+		} else {
+			$this->assertInstanceOf( WP_Error::class, $result );
+			$this->assertEquals( 'rest_forbidden', $result->get_error_code() );
+			$this->assertEquals( [ 'status' => 403 ], $result->get_error_data() );
+		}
 	}
 
-	#[Test]
-	public function it_denies_access_when_user_cannot_edit_posts(): void {
-		global $mock_current_user_can;
-		$mock_current_user_can = false;
-
-		$request = new WP_REST_Request();
-		$result = $this->endpoint->check_permission($request);
-
-		$this->assertInstanceOf(WP_Error::class, $result);
-		$this->assertEquals('rest_forbidden', $result->get_error_code());
-		$this->assertEquals(['status' => 403], $result->get_error_data());
+	public static function permission_provider(): array {
+		return [
+			'user can edit posts'    => [ true, true ],
+			'user cannot edit posts' => [ false, false ],
+		];
 	}
 
 	// =========================
 	// Route Registration Tests
 	// =========================
 
+	/**
+	 * GIVEN an endpoint with specific configuration
+	 * WHEN registering the route
+	 * THEN the route is registered with correct parameters
+	 *
+	 * @dataProvider route_registration_provider
+	 */
 	#[Test]
-	public function it_registers_route_with_correct_namespace(): void {
+	#[DataProvider( 'route_registration_provider' )]
+	public function it_registers_route_correctly(
+		?string $route,
+		?string $method,
+		?array $args,
+		string $expected_route,
+		string $expected_method,
+		array $expected_args
+	): void {
 		global $registered_rest_routes;
+
+		if ( $route !== null ) {
+			$this->endpoint->setRoute( $route );
+		}
+		if ( $method !== null ) {
+			$this->endpoint->setMethod( $method );
+		}
+		if ( $args !== null ) {
+			$this->endpoint->setArgs( $args );
+		}
 
 		$this->endpoint->register();
 
-		$this->assertCount(1, $registered_rest_routes);
-		$this->assertEquals('agentic/v1', $registered_rest_routes[0]['namespace']);
+		$this->assertCount( 1, $registered_rest_routes );
+		$this->assertEquals( 'agentic/v1', $registered_rest_routes[0]['namespace'] );
+		$this->assertEquals( $expected_route, $registered_rest_routes[0]['route'] );
+		$this->assertEquals( $expected_method, $registered_rest_routes[0]['args']['methods'] );
+		$this->assertEquals( $expected_args, $registered_rest_routes[0]['args']['args'] );
+		$this->assertEquals( [ $this->endpoint, 'handle' ], $registered_rest_routes[0]['args']['callback'] );
+		$this->assertEquals( [ $this->endpoint, 'check_permission' ], $registered_rest_routes[0]['args']['permission_callback'] );
 	}
 
-	#[Test]
-	public function it_registers_route_with_correct_path(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->setRoute('/custom/path');
-		$this->endpoint->register();
-
-		$this->assertEquals('/custom/path', $registered_rest_routes[0]['route']);
-	}
-
-	#[Test]
-	public function it_registers_route_with_correct_method(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->setMethod('POST');
-		$this->endpoint->register();
-
-		$this->assertEquals('POST', $registered_rest_routes[0]['args']['methods']);
-	}
-
-	#[Test]
-	public function it_registers_route_with_callback(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
-
-		$this->assertEquals([$this->endpoint, 'handle'], $registered_rest_routes[0]['args']['callback']);
-	}
-
-	#[Test]
-	public function it_registers_route_with_permission_callback(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
-
-		$this->assertEquals([$this->endpoint, 'check_permission'], $registered_rest_routes[0]['args']['permission_callback']);
-	}
-
-	#[Test]
-	public function it_registers_route_with_args(): void {
-		global $registered_rest_routes;
-
-		$args = [
-			'param' => [
-				'type'     => 'string',
-				'required' => true,
+	public static function route_registration_provider(): array {
+		return [
+			'default configuration'        => [
+				null,
+				null,
+				null,
+				'/test',
+				'GET',
+				[],
+			],
+			'custom route'                 => [
+				'/custom/path',
+				null,
+				null,
+				'/custom/path',
+				'GET',
+				[],
+			],
+			'custom method'                => [
+				null,
+				'POST',
+				null,
+				'/test',
+				'POST',
+				[],
+			],
+			'custom args'                  => [
+				null,
+				null,
+				[
+					'param' => [
+						'type'     => 'string',
+						'required' => true,
+					],
+				],
+				'/test',
+				'GET',
+				[
+					'param' => [
+						'type'     => 'string',
+						'required' => true,
+					],
+				],
 			],
 		];
-		$this->endpoint->setArgs($args);
-		$this->endpoint->register();
-
-		$this->assertEquals($args, $registered_rest_routes[0]['args']['args']);
-	}
-
-	#[Test]
-	public function it_registers_route_with_empty_args_by_default(): void {
-		global $registered_rest_routes;
-
-		$this->endpoint->register();
-
-		$this->assertEquals([], $registered_rest_routes[0]['args']['args']);
 	}
 
 	// =========================
 	// Handle Method Tests
 	// =========================
 
+	/**
+	 * GIVEN a valid request
+	 * WHEN the handle method is called
+	 * THEN a success response is returned
+	 */
 	#[Test]
 	public function it_handles_request(): void {
-		$request = new WP_REST_Request();
-		$response = $this->endpoint->handle($request);
+		$request  = new WP_REST_Request();
+		$response = $this->endpoint->handle( $request );
 
-		$this->assertInstanceOf(WP_REST_Response::class, $response);
-		$this->assertEquals(['test' => 'data'], $response->get_data());
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertEquals( [ 'test' => 'data' ], $response->get_data() );
 	}
 }
