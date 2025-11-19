@@ -46,8 +46,8 @@ class MarkdownToBlocksTest extends TestCase {
 
 	public static function empty_input_provider(): array {
 		return [
-			'empty string'   => [''],
-			'whitespace only' => ['   '],
+			'empty string'    => [ '' ],
+			'whitespace only' => [ '   ' ],
 		];
 	}
 
@@ -197,9 +197,17 @@ class MarkdownToBlocksTest extends TestCase {
 
 	public static function code_block_provider(): array {
 		return [
-			'without language'     => [ "```\nconst x = 1;\n```", null, 'const x = 1;' ],
-			'with javascript'      => [ "```javascript\nconst x = 1;\n```", 'javascript', 'const x = 1;' ],
-			'with php multiline'   => [ "```php\nfunction test() {\n    return true;\n}\n```", 'php', 'function test()' ],
+			'without language'   => [ "```\nconst x = 1;\n```", null, 'const x = 1;' ],
+			'with javascript'    => [
+				"```javascript\nconst x = 1;\n```",
+				'javascript',
+				'const x = 1;',
+			],
+			'with php multiline' => [
+				"```php\nfunction test() {\n    return true;\n}\n```",
+				'php',
+				'function test()',
+			],
 		];
 	}
 
@@ -415,10 +423,10 @@ class MarkdownToBlocksTest extends TestCase {
 
 	public static function horizontal_rule_provider(): array {
 		return [
-			'dashes'       => [ '---' ],
-			'asterisks'    => [ '***' ],
-			'underscores'  => [ '___' ],
-			'long dashes'  => [ '------' ],
+			'dashes'      => [ '---' ],
+			'asterisks'   => [ '***' ],
+			'underscores' => [ '___' ],
+			'long dashes' => [ '------' ],
 		];
 	}
 
@@ -444,12 +452,18 @@ class MarkdownToBlocksTest extends TestCase {
 
 	public static function inline_formatting_provider(): array {
 		return [
-			'bold with asterisks'       => [ 'This is **bold** text', '<strong>bold</strong>' ],
-			'bold with underscores'     => [ 'This is __bold__ text', '<strong>bold</strong>' ],
-			'italic with asterisks'     => [ 'This is *italic* text', '<em>italic</em>' ],
-			'italic with underscores'   => [ 'This is _italic_ text', '<em>italic</em>' ],
-			'bold and italic combined'  => [ 'This is ***bold and italic*** text', '<strong><em>bold and italic</em></strong>' ],
-			'inline code'               => [ 'Use the `convert()` function', '<code>convert()</code>' ],
+			'bold with asterisks'      => [ 'This is **bold** text', '<strong>bold</strong>' ],
+			'bold with underscores'    => [ 'This is __bold__ text', '<strong>bold</strong>' ],
+			'italic with asterisks'    => [ 'This is *italic* text', '<em>italic</em>' ],
+			'italic with underscores'  => [ 'This is _italic_ text', '<em>italic</em>' ],
+			'bold and italic combined' => [
+				'This is ***bold and italic*** text',
+				'<strong><em>bold and italic</em></strong>',
+			],
+			'inline code'              => [
+				'Use the `convert()` function',
+				'<code>convert()</code>',
+			],
 		];
 	}
 
@@ -485,8 +499,16 @@ class MarkdownToBlocksTest extends TestCase {
 
 	public static function image_provider(): array {
 		return [
-			'image with alt text' => [ '![Alt text](https://example.com/image.png)', 'https://example.com/image.png', 'Alt text' ],
-			'image with empty alt' => [ '![](https://example.com/image.png)', 'https://example.com/image.png', '' ],
+			'image with alt text'  => [
+				'![Alt text](https://example.com/image.png)',
+				'https://example.com/image.png',
+				'Alt text',
+			],
+			'image with empty alt' => [
+				'![](https://example.com/image.png)',
+				'https://example.com/image.png',
+				'',
+			],
 		];
 	}
 
@@ -640,10 +662,11 @@ MARKDOWN;
 
 	public static function edge_case_provider(): array {
 		return [
-			'consecutive empty lines'           => [ "First\n\n\n\nSecond", 2 ],
-			'unclosed code block'               => [ "```php\necho 'test';", 1 ], // Content becomes paragraph.
-			'list at end of document'           => [ "# Title\n\n- Item 1\n- Item 2", 2 ],
-			'special characters in content'     => [ 'Text with special chars: <>&"\'', 1 ],
+			'consecutive empty lines'       => [ "First\n\n\n\nSecond", 2 ],
+			'unclosed code block'           => [ "```php\necho 'test';", 1 ],
+			// Content becomes paragraph.
+			'list at end of document'       => [ "# Title\n\n- Item 1\n- Item 2", 2 ],
+			'special characters in content' => [ 'Text with special chars: <>&"\'', 1 ],
 		];
 	}
 }

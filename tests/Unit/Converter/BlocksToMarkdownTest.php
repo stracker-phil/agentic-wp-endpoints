@@ -188,14 +188,29 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function paragraph_inline_formatting_provider(): array {
 		return [
-			'simple text'           => [ '<p>This is a paragraph.</p>', 'This is a paragraph.' ],
-			'strong tag'            => [ '<p>Text with <strong>bold</strong> word.</p>', 'Text with **bold** word.' ],
-			'b tag'                 => [ '<p>Text with <b>bold</b> word.</p>', 'Text with **bold** word.' ],
-			'em tag'                => [ '<p>Text with <em>italic</em> word.</p>', 'Text with *italic* word.' ],
-			'i tag'                 => [ '<p>Text with <i>italic</i> word.</p>', 'Text with *italic* word.' ],
-			'code tag'              => [ '<p>Use the <code>convert()</code> function.</p>', 'Use the `convert()` function.' ],
-			'link'                  => [ '<p>Visit <a href="https://example.com">Example</a> site.</p>', 'Visit [Example](https://example.com) site.' ],
-			'image'                 => [ '<p><img src="https://example.com/img.png" alt="Test" /></p>', '![Test](https://example.com/img.png)' ],
+			'simple text' => [ '<p>This is a paragraph.</p>', 'This is a paragraph.' ],
+			'strong tag'  => [
+				'<p>Text with <strong>bold</strong> word.</p>',
+				'Text with **bold** word.',
+			],
+			'b tag'       => [ '<p>Text with <b>bold</b> word.</p>', 'Text with **bold** word.' ],
+			'em tag'      => [
+				'<p>Text with <em>italic</em> word.</p>',
+				'Text with *italic* word.',
+			],
+			'i tag'       => [ '<p>Text with <i>italic</i> word.</p>', 'Text with *italic* word.' ],
+			'code tag'    => [
+				'<p>Use the <code>convert()</code> function.</p>',
+				'Use the `convert()` function.',
+			],
+			'link'        => [
+				'<p>Visit <a href="https://example.com">Example</a> site.</p>',
+				'Visit [Example](https://example.com) site.',
+			],
+			'image'       => [
+				'<p><img src="https://example.com/img.png" alt="Test" /></p>',
+				'![Test](https://example.com/img.png)',
+			],
 		];
 	}
 
@@ -250,12 +265,12 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function code_block_provider(): array {
 		return [
-			'without language' => [
+			'without language'  => [
 				[],
 				'<pre class="wp-block-code"><code>const x = 1;</code></pre>',
 				"```\nconst x = 1;\n```",
 			],
-			'with language'    => [
+			'with language'     => [
 				[ 'language' => 'javascript' ],
 				'<pre class="wp-block-code"><code>const x = 1;</code></pre>',
 				"```javascript\nconst x = 1;\n```",
@@ -365,17 +380,17 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function list_provider(): array {
 		return [
-			'unordered list'         => [
+			'unordered list'       => [
 				[ 'ordered' => false ],
 				'<ul class="wp-block-list"><li>Item one</li><li>Item two</li><li>Item three</li></ul>',
 				"- Item one\n- Item two\n- Item three",
 			],
-			'ordered list'           => [
+			'ordered list'         => [
 				[ 'ordered' => true ],
 				'<ol class="wp-block-list"><li>First</li><li>Second</li><li>Third</li></ol>',
 				"1. First\n2. Second\n3. Third",
 			],
-			'default to unordered'   => [
+			'default to unordered' => [
 				[],
 				'<ul><li>Item</li></ul>',
 				'- Item',
@@ -438,7 +453,7 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function image_provider(): array {
 		return [
-			'from attrs'           => [
+			'from attrs'              => [
 				[ 'url' => 'https://example.com/image.png', 'alt' => 'Example image' ],
 				'<figure><img src="https://example.com/image.png" alt="Example image"/></figure>',
 				'![Example image](https://example.com/image.png)',
@@ -448,12 +463,12 @@ class BlocksToMarkdownTest extends TestCase {
 				'<figure><img src="https://example.com/image.png" alt="Alt text"/></figure>',
 				'![Alt text](https://example.com/image.png)',
 			],
-			'with empty alt'       => [
+			'with empty alt'          => [
 				[ 'url' => 'https://example.com/image.png', 'alt' => '' ],
 				'',
 				'![](https://example.com/image.png)',
 			],
-			'no url available'     => [
+			'no url available'        => [
 				[],
 				'<figure></figure>',
 				'',
@@ -496,7 +511,11 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function unsupported_block_provider(): array {
 		return [
-			'gallery with content' => [ 'core/gallery', '<figure class="wp-block-gallery">Gallery content</figure>', 'Gallery content' ],
+			'gallery with content' => [
+				'core/gallery',
+				'<figure class="wp-block-gallery">Gallery content</figure>',
+				'Gallery content',
+			],
 			'spacer with no html'  => [ 'core/spacer', '', '' ],
 		];
 	}
@@ -624,7 +643,7 @@ class BlocksToMarkdownTest extends TestCase {
 
 	public static function missing_keys_provider(): array {
 		return [
-			'missing attrs key'      => [
+			'missing attrs key'     => [
 				[
 					'blockName'   => 'core/paragraph',
 					'innerHTML'   => '<p>No attrs</p>',
@@ -632,7 +651,7 @@ class BlocksToMarkdownTest extends TestCase {
 				],
 				'No attrs',
 			],
-			'missing innerHTML key'  => [
+			'missing innerHTML key' => [
 				[
 					'blockName'   => 'core/separator',
 					'attrs'       => [],

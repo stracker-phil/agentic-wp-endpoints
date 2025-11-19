@@ -155,7 +155,11 @@ class ReplacePostEndpointTest extends TestCase {
 		return [
 			'heading with level'      => [ '## Level 2 Heading', 'core/heading', '"level":2' ],
 			'paragraph without attrs' => [ 'Simple paragraph', 'core/paragraph', null ],
-			'paragraph with html'     => [ 'Test paragraph', 'core/paragraph', '<p>Test paragraph</p>' ],
+			'paragraph with html'     => [
+				'Test paragraph',
+				'core/paragraph',
+				'<p>Test paragraph</p>',
+			],
 		];
 	}
 
@@ -242,8 +246,8 @@ MD;
 
 	public static function empty_markdown_provider(): array {
 		return [
-			'empty string'       => [ '' ],
-			'null (not set)'     => [ null ],
+			'empty string'   => [ '' ],
+			'null (not set)' => [ null ],
 		];
 	}
 
@@ -269,8 +273,8 @@ MD;
 
 	public static function whitespace_markdown_provider(): array {
 		return [
-			'spaces only'            => [ '   ' ],
-			'newlines only'          => [ "\n\n" ],
+			'spaces only'             => [ '   ' ],
+			'newlines only'           => [ "\n\n" ],
 			'whitespace and newlines' => [ "\n\n   \n\n" ],
 		];
 	}
@@ -301,9 +305,9 @@ MD;
 
 	public static function special_content_provider(): array {
 		return [
-			'special characters'    => [ 'Text with <special> & "chars"', 1 ],
-			'unicode content'       => [ '# Привет мир 你好世界', 1 ],
-			'very long content'     => [ str_repeat( "Paragraph\n\n", 100 ), 100 ],
+			'special characters' => [ 'Text with <special> & "chars"', 1 ],
+			'unicode content'    => [ '# Привет мир 你好世界', 1 ],
+			'very long content'  => [ str_repeat( "Paragraph\n\n", 100 ), 100 ],
 		];
 	}
 

@@ -37,15 +37,15 @@ class TestableEndpoint extends AbstractEndpoint {
 		$this->register_route();
 	}
 
-	protected function get_route(): string {
+	protected function define_route(): string {
 		return $this->route;
 	}
 
-	protected function get_methods(): string {
+	protected function define_methods(): string {
 		return $this->method;
 	}
 
-	protected function get_args(): array {
+	protected function define_args(): array {
 		return $this->args;
 	}
 
@@ -121,11 +121,15 @@ class AbstractEndpointTest extends TestCase {
 
 	public static function success_response_provider(): array {
 		return [
-			'array data with default status'  => [ [ 'key' => 'value' ], 200, [ 'key' => 'value' ] ],
-			'array data with custom status'   => [ [ 'created' => true ], 201, [ 'created' => true ] ],
-			'empty array'                     => [ [], 200, [] ],
-			'null data'                       => [ null, 200, null ],
-			'string data'                     => [ 'string data', 200, 'string data' ],
+			'array data with default status' => [ [ 'key' => 'value' ], 200, [ 'key' => 'value' ] ],
+			'array data with custom status'  => [
+				[ 'created' => true ],
+				201,
+				[ 'created' => true ],
+			],
+			'empty array'                    => [ [], 200, [] ],
+			'null data'                      => [ null, 200, null ],
+			'string data'                    => [ 'string data', 200, 'string data' ],
 		];
 	}
 
@@ -153,9 +157,9 @@ class AbstractEndpointTest extends TestCase {
 
 	public static function error_response_provider(): array {
 		return [
-			'default bad request'  => [ 'test_error', 'Test message', 400 ],
-			'not found'            => [ 'not_found', 'Resource not found', 404 ],
-			'server error'         => [ 'server_error', 'Internal error', 500 ],
+			'default bad request' => [ 'test_error', 'Test message', 400 ],
+			'not found'           => [ 'not_found', 'Resource not found', 404 ],
+			'server error'        => [ 'server_error', 'Internal error', 500 ],
 		];
 	}
 
@@ -235,13 +239,16 @@ class AbstractEndpointTest extends TestCase {
 		$this->assertEquals( $expected_route, $registered_rest_routes[0]['route'] );
 		$this->assertEquals( $expected_method, $registered_rest_routes[0]['args']['methods'] );
 		$this->assertEquals( $expected_args, $registered_rest_routes[0]['args']['args'] );
-		$this->assertEquals( [ $this->endpoint, 'handle' ], $registered_rest_routes[0]['args']['callback'] );
-		$this->assertEquals( [ $this->endpoint, 'check_permission' ], $registered_rest_routes[0]['args']['permission_callback'] );
+
+		$this->assertIsCallable( $registered_rest_routes[0]['args']['callback'] );
+		$this->assertIsCallable( $registered_rest_routes[0]['args']['permission_callback'] );
+		$this->assertEquals( $this->endpoint->handle( ... ), $registered_rest_routes[0]['args']['callback'] );
+		$this->assertEquals( $this->endpoint->check_permission( ... ), $registered_rest_routes[0]['args']['permission_callback'] );
 	}
 
 	public static function route_registration_provider(): array {
 		return [
-			'default configuration'        => [
+			'default configuration' => [
 				null,
 				null,
 				null,
@@ -249,7 +256,7 @@ class AbstractEndpointTest extends TestCase {
 				'GET',
 				[],
 			],
-			'custom route'                 => [
+			'custom route'          => [
 				'/custom/path',
 				null,
 				null,
@@ -257,7 +264,7 @@ class AbstractEndpointTest extends TestCase {
 				'GET',
 				[],
 			],
-			'custom method'                => [
+			'custom method'         => [
 				null,
 				'POST',
 				null,
@@ -265,7 +272,7 @@ class AbstractEndpointTest extends TestCase {
 				'POST',
 				[],
 			],
-			'custom args'                  => [
+			'custom args'           => [
 				null,
 				null,
 				[

@@ -182,7 +182,7 @@ class GetPostEndpointTest extends TestCase {
 
 	public static function html_fallback_provider(): array {
 		return [
-			'unsupported block' => [
+			'unsupported block'    => [
 				[
 					[
 						'blockName'   => 'core/gallery',
