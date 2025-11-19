@@ -22,5 +22,9 @@
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true
+  },
+  "scripts": {
+    "tdd": "phpunit --stop-on-failure --colors=true",
+    "test": "XDEBUG_MODE=coverage phpunit --coverage-html coverage --coverage-clover coverage/report.xml"
   }
 }
