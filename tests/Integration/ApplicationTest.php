@@ -32,7 +32,7 @@ class ApplicationTest extends TestCase {
 		$parsedown->setSafeMode( true );
 		$markdownToBlocks = new MarkdownToBlocks( $parsedown );
 
-		$htmlConverter = new HtmlConverter( [
+		$htmlConverter    = new HtmlConverter( [
 			'strip_tags' => false,
 			'hard_break' => true,
 		] );
@@ -81,7 +81,8 @@ class ApplicationTest extends TestCase {
 
 		$this->assertCount( 1, $added_actions );
 		$this->assertEquals( 'rest_api_init', $added_actions[0]['hook'] );
-		$this->assertEquals( [ $this->application, 'register_rest_routes' ], $added_actions[0]['callback'] );
+		$this->assertIsCallable( $added_actions[0]['callback'] );
+		$this->assertEquals( $this->application->register_rest_routes( ... ), $added_actions[0]['callback'] );
 		$this->assertEquals( 10, $added_actions[0]['priority'] );
 		$this->assertEquals( 1, $added_actions[0]['accepted_args'] );
 	}
@@ -137,8 +138,8 @@ class ApplicationTest extends TestCase {
 
 	public static function http_method_provider(): array {
 		return [
-			'POST for to-blocks'    => [ 'POST', '/agentic-post' ],
-			'GET for to-markdown'   => [ 'GET', '/agentic-post' ],
+			'POST for to-blocks'  => [ 'POST', '/agentic-post' ],
+			'GET for to-markdown' => [ 'GET', '/agentic-post' ],
 		];
 	}
 
@@ -206,8 +207,12 @@ class ApplicationTest extends TestCase {
 
 	public static function multiple_calls_provider(): array {
 		return [
-			'run() adds action each time'              => [ 'run', 'added_actions', 2 ],
-			'register_rest_routes() registers each time' => [ 'register_rest_routes', 'registered_rest_routes', 4 ],
+			'run() adds action each time'                => [ 'run', 'added_actions', 2 ],
+			'register_rest_routes() registers each time' => [
+				'register_rest_routes',
+				'registered_rest_routes',
+				4,
+			],
 		];
 	}
 }

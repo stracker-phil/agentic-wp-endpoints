@@ -21,10 +21,6 @@ class GetPostEndpoint extends AbstractEndpoint {
 		$this->converter = $converter;
 	}
 
-	public function register(): void {
-		$this->register_route();
-	}
-
 	protected function define_route(): string {
 		return '/agentic-post';
 	}

@@ -6,6 +6,7 @@ namespace AgenticEndpoints;
 
 use AgenticEndpoints\Endpoints\GetPostEndpoint;
 use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
+use AgenticEndpoints\Endpoints\AbstractEndpoint;
 
 /**
  * Main application class for Agentic Endpoints plugin.
@@ -16,39 +17,23 @@ use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
 class Application {
 
 	/**
-	 * REST endpoints to register.
-	 *
-	 * @var array
+	 * @var AbstractEndpoint[]
 	 */
 	private array $endpoints;
 
-	/**
-	 * Constructor.
-	 *
-	 * Dependencies are injected by WPDI autowiring.
-	 *
-	 * @param ReplacePostEndpoint $replace_post_endpoint Markdown to blocks endpoint.
-	 * @param GetPostEndpoint     $get_post_endpoint     Post to markdown endpoint.
-	 */
 	public function __construct(
 		ReplacePostEndpoint $replace_post_endpoint,
 		GetPostEndpoint $get_post_endpoint
 	) {
+
 		$this->endpoints = [
 			$replace_post_endpoint,
 			$get_post_endpoint,
 		];
 	}
 
-	/**
-	 * Initialize the application.
-	 *
-	 * Registers WordPress hooks for REST API.
-	 *
-	 * @return void
-	 */
 	public function run(): void {
-		add_action( 'rest_api_init', [ $this, 'register_rest_routes' ] );
+		add_action( 'rest_api_init', $this->register_rest_routes( ... ) );
 	}
 
 	/**

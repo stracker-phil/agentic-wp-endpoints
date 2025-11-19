@@ -33,10 +33,6 @@ class TestableEndpoint extends AbstractEndpoint {
 		$this->args = $args;
 	}
 
-	public function register(): void {
-		$this->register_route();
-	}
-
 	protected function define_route(): string {
 		return $this->route;
 	}

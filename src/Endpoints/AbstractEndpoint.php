@@ -15,8 +15,6 @@ abstract class AbstractEndpoint {
 
 	protected string $namespace = 'agentic/v1';
 
-	abstract public function register(): void;
-
 	abstract protected function define_route(): string;
 
 	abstract protected function define_methods(): array|string;
@@ -46,7 +44,7 @@ abstract class AbstractEndpoint {
 		return true;
 	}
 
-	protected function register_route(): bool {
+	public function register(): bool {
 		return register_rest_route(
 			$this->namespace,
 			$this->define_route(),
