@@ -22,7 +22,7 @@ class ReplacePostEndpoint extends AbstractEndpoint {
 	}
 
 	protected function define_route(): string {
-		return '/agentic-post';
+		return '/agentic-post/(?P<id>\d+)';
 	}
 
 	protected function define_methods(): string {
@@ -31,17 +31,35 @@ class ReplacePostEndpoint extends AbstractEndpoint {
 
 	protected function define_args(): array {
 		return [
-			'markdown' => [
+			'markdown'    => [
 				'description'       => __( 'Markdown content to convert to Gutenberg blocks.', 'agentic-endpoints' ),
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => 'sanitize_textarea_field',
 			],
+			'agent_notes' => [
+				'description'       => __( 'Notes for the AI agent to track progress.', 'agentic-endpoints' ),
+				'type'              => 'string',
+				'required'          => false,
+				'sanitize_callback' => 'trim',
+			],
 		];
 	}
 
 	public function handle( WP_REST_Request $request ): WP_Error|WP_REST_Response {
-		$markdown = $request->get_param( 'markdown' );
+		$post_id     = (int) $request->get_param( 'id' );
+		$markdown    = $request->get_param( 'markdown' );
+		$agent_notes = $request->get_param( 'agent_notes' );
+
+		// Verify post exists.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return $this->error(
+				'post_not_found',
+				__( 'Post not found.', 'agentic-endpoints' ),
+				404
+			);
+		}
 
 		if ( empty( $markdown ) ) {
 			return $this->error(
@@ -54,10 +72,22 @@ class ReplacePostEndpoint extends AbstractEndpoint {
 		try {
 			$blocks = $this->converter->convert( $markdown );
 
-			// Also generate the serialized block content for direct use.
+			// Generate the serialized block content.
 			$block_content = $this->serialize_blocks( $blocks );
 
+			// Update post content.
+			wp_update_post( [
+				'ID'           => $post_id,
+				'post_content' => $block_content,
+			] );
+
+			// Update agent notes if provided.
+			if ( $agent_notes !== null ) {
+				update_post_meta( $post_id, '_agent_notes', $agent_notes );
+			}
+
 			return $this->success( [
+				'post_id'       => $post_id,
 				'blocks'        => $blocks,
 				'block_content' => $block_content,
 				'block_count'   => count( $blocks ),

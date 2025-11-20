@@ -6,6 +6,9 @@ namespace AgenticEndpoints;
 
 use AgenticEndpoints\Endpoints\GetPostEndpoint;
 use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
+use AgenticEndpoints\Endpoints\GetPostNoteEndpoint;
+use AgenticEndpoints\Endpoints\ReplacePostNoteEndpoint;
+use AgenticEndpoints\Endpoints\ClearPostNoteEndpoint;
 use AgenticEndpoints\Endpoints\AbstractEndpoint;
 
 /**
@@ -23,12 +26,17 @@ class Application {
 
 	public function __construct(
 		ReplacePostEndpoint $replace_post_endpoint,
-		GetPostEndpoint $get_post_endpoint
+		GetPostEndpoint $get_post_endpoint,
+		GetPostNoteEndpoint $get_post_note_endpoint,
+		ReplacePostNoteEndpoint $replace_post_note_endpoint,
+		ClearPostNoteEndpoint $clear_post_note_endpoint
 	) {
-
 		$this->endpoints = [
 			$replace_post_endpoint,
 			$get_post_endpoint,
+			$get_post_note_endpoint,
+			$replace_post_note_endpoint,
+			$clear_post_note_endpoint,
 		];
 	}
 

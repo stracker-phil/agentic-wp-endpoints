@@ -22,7 +22,7 @@ class GetPostEndpoint extends AbstractEndpoint {
 	}
 
 	protected function define_route(): string {
-		return '/agentic-post';
+		return '/agentic-post/(?P<id>\d+)';
 	}
 
 	protected function define_methods(): string {
@@ -30,18 +30,11 @@ class GetPostEndpoint extends AbstractEndpoint {
 	}
 
 	protected function define_args(): array {
-		return [
-			'post_id' => [
-				'description'       => __( 'Post ID to convert to Markdown.', 'agentic-endpoints' ),
-				'type'              => 'integer',
-				'required'          => true,
-				'sanitize_callback' => 'absint',
-			],
-		];
+		return [];
 	}
 
 	public function handle( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$post_id = $request->get_param( 'post_id' );
+		$post_id = (int) $request->get_param( 'id' );
 
 		try {
 			// Get content from post.
@@ -61,6 +54,9 @@ class GetPostEndpoint extends AbstractEndpoint {
 			// Convert blocks to Markdown.
 			$result = $this->converter->convert( $blocks );
 
+			// Get agent notes from post meta.
+			$agent_notes = get_post_meta( $post_id, '_agent_notes', true );
+
 			return $this->success( [
 				'post_id'           => $post_id,
 				'post_title'        => $post->post_title,
@@ -70,6 +66,7 @@ class GetPostEndpoint extends AbstractEndpoint {
 				'post_modified'     => $post->post_modified,
 				'markdown'          => $result['markdown'],
 				'has_html_fallback' => $result['has_html_fallback'],
+				'agent_notes'       => $agent_notes ?: '',
 			] );
 		} catch ( Exception $e ) {
 			return $this->error(
