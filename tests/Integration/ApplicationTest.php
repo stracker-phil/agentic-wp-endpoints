@@ -10,6 +10,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use AgenticEndpoints\Application;
 use AgenticEndpoints\Endpoints\GetPostEndpoint;
 use AgenticEndpoints\Endpoints\ReplacePostEndpoint;
+use AgenticEndpoints\Endpoints\GetPostNoteEndpoint;
+use AgenticEndpoints\Endpoints\ReplacePostNoteEndpoint;
+use AgenticEndpoints\Endpoints\ClearPostNoteEndpoint;
 use AgenticEndpoints\Converter\MarkdownToBlocks;
 use AgenticEndpoints\Converter\BlocksToMarkdown;
 use Parsedown;
@@ -23,6 +26,9 @@ class ApplicationTest extends TestCase {
 	private Application $application;
 	private ReplacePostEndpoint $replacePostEndpoint;
 	private GetPostEndpoint $getPostEndpoint;
+	private GetPostNoteEndpoint $getPostNoteEndpoint;
+	private ReplacePostNoteEndpoint $replacePostNoteEndpoint;
+	private ClearPostNoteEndpoint $clearPostNoteEndpoint;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -38,9 +44,18 @@ class ApplicationTest extends TestCase {
 		] );
 		$blocksToMarkdown = new BlocksToMarkdown( $htmlConverter );
 
-		$this->replacePostEndpoint = new ReplacePostEndpoint( $markdownToBlocks );
-		$this->getPostEndpoint     = new GetPostEndpoint( $blocksToMarkdown );
-		$this->application         = new Application( $this->replacePostEndpoint, $this->getPostEndpoint );
+		$this->replacePostEndpoint     = new ReplacePostEndpoint( $markdownToBlocks );
+		$this->getPostEndpoint         = new GetPostEndpoint( $blocksToMarkdown );
+		$this->getPostNoteEndpoint     = new GetPostNoteEndpoint();
+		$this->replacePostNoteEndpoint = new ReplacePostNoteEndpoint();
+		$this->clearPostNoteEndpoint   = new ClearPostNoteEndpoint();
+		$this->application             = new Application(
+			$this->replacePostEndpoint,
+			$this->getPostEndpoint,
+			$this->getPostNoteEndpoint,
+			$this->replacePostNoteEndpoint,
+			$this->clearPostNoteEndpoint
+		);
 
 		// Reset global mocks.
 		global $added_actions, $registered_rest_routes;
@@ -59,7 +74,13 @@ class ApplicationTest extends TestCase {
 	 */
 	#[Test]
 	public function it_accepts_endpoints_via_constructor(): void {
-		$application = new Application( $this->replacePostEndpoint, $this->getPostEndpoint );
+		$application = new Application(
+			$this->replacePostEndpoint,
+			$this->getPostEndpoint,
+			$this->getPostNoteEndpoint,
+			$this->replacePostNoteEndpoint,
+			$this->clearPostNoteEndpoint
+		);
 
 		$this->assertInstanceOf( Application::class, $application );
 	}
@@ -92,9 +113,9 @@ class ApplicationTest extends TestCase {
 	// =========================
 
 	/**
-	 * GIVEN an Application with two endpoints
+	 * GIVEN an Application with five endpoints
 	 * WHEN register_rest_routes() is called
-	 * THEN both endpoints are registered on the same route with correct methods
+	 * THEN all endpoints are registered with correct routes
 	 */
 	#[Test]
 	public function it_registers_all_endpoints_on_agentic_post_route(): void {
@@ -102,10 +123,11 @@ class ApplicationTest extends TestCase {
 
 		$this->application->register_rest_routes();
 
-		$this->assertCount( 2, $registered_rest_routes );
+		$this->assertCount( 5, $registered_rest_routes );
 
 		$routes = array_column( $registered_rest_routes, 'route' );
-		$this->assertEquals( [ '/agentic-post', '/agentic-post' ], $routes );
+		$this->assertContains( '/agentic-post/(?P<id>\d+)', $routes );
+		$this->assertContains( '/agentic-post/(?P<id>\d+)/notes', $routes );
 
 		// All use same namespace.
 		$namespaces = array_unique( array_column( $registered_rest_routes, 'namespace' ) );
@@ -116,7 +138,7 @@ class ApplicationTest extends TestCase {
 	/**
 	 * GIVEN registered endpoints
 	 * WHEN checking HTTP methods
-	 * THEN POST is used for to-blocks and GET for to-markdown
+	 * THEN each endpoint has correct method and route combination
 	 *
 	 * @dataProvider http_method_provider
 	 */
@@ -127,19 +149,20 @@ class ApplicationTest extends TestCase {
 
 		$this->application->register_rest_routes();
 
-		$filtered = array_filter( $registered_rest_routes, function ( $route ) use ( $method ) {
-			return $route['args']['methods'] === $method;
+		$filtered = array_filter( $registered_rest_routes, function ( $route ) use ( $method, $expected_route ) {
+			return $route['args']['methods'] === $method && $route['route'] === $expected_route;
 		} );
 
-		$this->assertCount( 1, $filtered );
-		$route = array_values( $filtered )[0];
-		$this->assertEquals( $expected_route, $route['route'] );
+		$this->assertCount( 1, $filtered, "Expected one route with method {$method} and route {$expected_route}" );
 	}
 
 	public static function http_method_provider(): array {
 		return [
-			'POST for to-blocks'  => [ 'POST', '/agentic-post' ],
-			'GET for to-markdown' => [ 'GET', '/agentic-post' ],
+			'POST for replace-post'   => [ 'POST', '/agentic-post/(?P<id>\d+)' ],
+			'GET for get-post'        => [ 'GET', '/agentic-post/(?P<id>\d+)' ],
+			'GET for get-note'        => [ 'GET', '/agentic-post/(?P<id>\d+)/notes' ],
+			'POST for replace-note'   => [ 'POST', '/agentic-post/(?P<id>\d+)/notes' ],
+			'DELETE for clear-note'   => [ 'DELETE', '/agentic-post/(?P<id>\d+)/notes' ],
 		];
 	}
 
@@ -183,7 +206,7 @@ class ApplicationTest extends TestCase {
 		$this->application->register_rest_routes();
 
 		// Verify routes were registered.
-		$this->assertCount( 2, $registered_rest_routes );
+		$this->assertCount( 5, $registered_rest_routes );
 	}
 
 	/**
@@ -211,7 +234,7 @@ class ApplicationTest extends TestCase {
 			'register_rest_routes() registers each time' => [
 				'register_rest_routes',
 				'registered_rest_routes',
-				4,
+				10,
 			],
 		];
 	}

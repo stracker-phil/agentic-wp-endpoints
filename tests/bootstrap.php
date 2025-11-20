@@ -51,6 +51,23 @@ if ( ! function_exists( 'get_post' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_update_post' ) ) {
+	function wp_update_post( array $args ): int {
+		global $mock_posts;
+		$post_id = $args['ID'] ?? 0;
+		if ( isset( $mock_posts[ $post_id ] ) ) {
+			if ( isset( $args['post_content'] ) ) {
+				$mock_posts[ $post_id ]->post_content = $args['post_content'];
+			}
+			if ( isset( $args['post_title'] ) ) {
+				$mock_posts[ $post_id ]->post_title = $args['post_title'];
+			}
+			return $post_id;
+		}
+		return 0;
+	}
+}
+
 if ( ! function_exists( 'parse_blocks' ) ) {
 	function parse_blocks( string $content ): array {
 		global $mock_parsed_blocks;
@@ -86,6 +103,42 @@ if ( ! function_exists( 'absint' ) ) {
 if ( ! function_exists( 'wp_kses_post' ) ) {
 	function wp_kses_post( string $data ): string {
 		return $data;
+	}
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	function get_post_meta( int $post_id, string $key = '', bool $single = false ) {
+		global $mock_post_meta;
+		if ( empty( $key ) ) {
+			return $mock_post_meta[ $post_id ] ?? [];
+		}
+		$value = $mock_post_meta[ $post_id ][ $key ] ?? null;
+		if ( $single ) {
+			return $value;
+		}
+		return $value !== null ? [ $value ] : [];
+	}
+}
+
+if ( ! function_exists( 'update_post_meta' ) ) {
+	function update_post_meta( int $post_id, string $key, $value ): bool {
+		global $mock_post_meta;
+		if ( ! isset( $mock_post_meta[ $post_id ] ) ) {
+			$mock_post_meta[ $post_id ] = [];
+		}
+		$mock_post_meta[ $post_id ][ $key ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_post_meta' ) ) {
+	function delete_post_meta( int $post_id, string $key ): bool {
+		global $mock_post_meta;
+		if ( isset( $mock_post_meta[ $post_id ][ $key ] ) ) {
+			unset( $mock_post_meta[ $post_id ][ $key ] );
+			return true;
+		}
+		return false;
 	}
 }
 

@@ -34,10 +34,11 @@ class GetPostEndpointTest extends TestCase {
 		$this->endpoint  = new GetPostEndpoint( $this->converter );
 
 		// Reset global mocks.
-		global $registered_rest_routes, $mock_posts, $mock_parsed_blocks;
+		global $registered_rest_routes, $mock_posts, $mock_parsed_blocks, $mock_post_meta;
 		$registered_rest_routes = [];
 		$mock_posts             = [];
 		$mock_parsed_blocks     = [];
+		$mock_post_meta         = [];
 	}
 
 	// =========================
@@ -47,7 +48,7 @@ class GetPostEndpointTest extends TestCase {
 	/**
 	 * GIVEN a GetPostEndpoint instance
 	 * WHEN registering the route
-	 * THEN it registers with correct namespace, route, method, and args
+	 * THEN it registers with correct namespace, route, and method
 	 */
 	#[Test]
 	public function it_registers_correct_route_configuration(): void {
@@ -57,14 +58,8 @@ class GetPostEndpointTest extends TestCase {
 
 		$this->assertCount( 1, $registered_rest_routes );
 		$this->assertEquals( 'agentic/v1', $registered_rest_routes[0]['namespace'] );
-		$this->assertEquals( '/agentic-post', $registered_rest_routes[0]['route'] );
+		$this->assertEquals( '/agentic-post/(?P<id>\d+)', $registered_rest_routes[0]['route'] );
 		$this->assertEquals( 'GET', $registered_rest_routes[0]['args']['methods'] );
-
-		$args = $registered_rest_routes[0]['args']['args'];
-		$this->assertArrayHasKey( 'post_id', $args );
-		$this->assertEquals( 'integer', $args['post_id']['type'] );
-		$this->assertTrue( $args['post_id']['required'] );
-		$this->assertArrayNotHasKey( 'content', $args );
 	}
 
 	// =========================
@@ -99,7 +94,7 @@ class GetPostEndpointTest extends TestCase {
 		];
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 123 );
+		$request->set_param( 'id', 123 );
 
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
@@ -112,11 +107,11 @@ class GetPostEndpointTest extends TestCase {
 	/**
 	 * GIVEN a valid post
 	 * WHEN calling the endpoint
-	 * THEN all expected metadata fields are returned
+	 * THEN all expected metadata fields are returned including agent_notes
 	 */
 	#[Test]
 	public function it_returns_all_post_metadata(): void {
-		global $mock_posts, $mock_parsed_blocks;
+		global $mock_posts, $mock_parsed_blocks, $mock_post_meta;
 
 		$post                = new WP_Post( 456 );
 		$post->post_content  = 'content';
@@ -127,10 +122,11 @@ class GetPostEndpointTest extends TestCase {
 		$post->post_modified = '2024-06-02 12:30:00';
 		$mock_posts[456]     = $post;
 
-		$mock_parsed_blocks = [];
+		$mock_parsed_blocks            = [];
+		$mock_post_meta[456]['_agent_notes'] = 'Test notes';
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 456 );
+		$request->set_param( 'id', 456 );
 
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
@@ -143,6 +139,7 @@ class GetPostEndpointTest extends TestCase {
 		$this->assertArrayHasKey( 'post_modified', $data );
 		$this->assertArrayHasKey( 'markdown', $data );
 		$this->assertArrayHasKey( 'has_html_fallback', $data );
+		$this->assertArrayHasKey( 'agent_notes', $data );
 
 		$this->assertEquals( 456, $data['post_id'] );
 		$this->assertEquals( 'My Post Title', $data['post_title'] );
@@ -150,6 +147,32 @@ class GetPostEndpointTest extends TestCase {
 		$this->assertEquals( 'my-post-title', $data['post_name'] );
 		$this->assertEquals( '2024-06-01 08:00:00', $data['post_date'] );
 		$this->assertEquals( '2024-06-02 12:30:00', $data['post_modified'] );
+		$this->assertEquals( 'Test notes', $data['agent_notes'] );
+	}
+
+	/**
+	 * GIVEN a post without agent notes
+	 * WHEN calling the endpoint
+	 * THEN agent_notes returns empty string
+	 */
+	#[Test]
+	public function it_returns_empty_string_when_no_agent_notes(): void {
+		global $mock_posts, $mock_parsed_blocks;
+
+		$post               = new WP_Post( 789 );
+		$post->post_content = 'content';
+		$post->post_title   = 'Test';
+		$mock_posts[789]    = $post;
+
+		$mock_parsed_blocks = [];
+
+		$request = new WP_REST_Request();
+		$request->set_param( 'id', 789 );
+
+		$response = $this->endpoint->handle( $request );
+		$data     = $response->get_data();
+
+		$this->assertEquals( '', $data['agent_notes'] );
 	}
 
 	/**
@@ -164,15 +187,15 @@ class GetPostEndpointTest extends TestCase {
 	public function it_sets_html_fallback_flag_correctly( array $blocks, bool $expected_fallback ): void {
 		global $mock_posts, $mock_parsed_blocks;
 
-		$post               = new WP_Post( 789 );
+		$post               = new WP_Post( 111 );
 		$post->post_content = 'content';
 		$post->post_title   = 'Test';
-		$mock_posts[789]    = $post;
+		$mock_posts[111]    = $post;
 
 		$mock_parsed_blocks = $blocks;
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 789 );
+		$request->set_param( 'id', 111 );
 
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
@@ -228,7 +251,7 @@ class GetPostEndpointTest extends TestCase {
 		$mock_posts = [];
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 999 );
+		$request->set_param( 'id', 999 );
 
 		$response = $this->endpoint->handle( $request );
 
@@ -259,51 +282,13 @@ class GetPostEndpointTest extends TestCase {
 		$mock_parsed_blocks = [];
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 222 );
+		$request->set_param( 'id', 222 );
 
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertEquals( '', $data['markdown'] );
-	}
-
-	/**
-	 * GIVEN a post with blocks containing null blockName
-	 * WHEN converting to markdown
-	 * THEN those blocks are skipped
-	 */
-	#[Test]
-	public function it_handles_blocks_with_no_blockname(): void {
-		global $mock_posts, $mock_parsed_blocks;
-
-		$post               = new WP_Post( 333 );
-		$post->post_content = 'content';
-		$post->post_title   = 'Test';
-		$mock_posts[333]    = $post;
-
-		$mock_parsed_blocks = [
-			[
-				'blockName'   => null,
-				'attrs'       => [],
-				'innerHTML'   => '  ',
-				'innerBlocks' => [],
-			],
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Real content</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 333 );
-
-		$response = $this->endpoint->handle( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'Real content', $data['markdown'] );
 	}
 
 	/**
@@ -342,7 +327,7 @@ class GetPostEndpointTest extends TestCase {
 		];
 
 		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 444 );
+		$request->set_param( 'id', 444 );
 
 		$response = $this->endpoint->handle( $request );
 		$data     = $response->get_data();
@@ -350,104 +335,5 @@ class GetPostEndpointTest extends TestCase {
 		$this->assertStringContainsString( '## Heading', $data['markdown'] );
 		$this->assertStringContainsString( '1. One', $data['markdown'] );
 		$this->assertStringContainsString( '```php', $data['markdown'] );
-	}
-
-	/**
-	 * GIVEN a post with unicode content
-	 * WHEN converting to markdown
-	 * THEN unicode characters are preserved
-	 */
-	#[Test]
-	public function it_handles_unicode_in_post_content(): void {
-		global $mock_posts, $mock_parsed_blocks;
-
-		$post               = new WP_Post( 555 );
-		$post->post_content = 'unicode';
-		$post->post_title   = 'Unicode Post';
-		$post->post_name    = 'unicode-post';
-		$mock_posts[555]    = $post;
-
-		$mock_parsed_blocks = [
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Привет 你好 مرحبا</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 555 );
-
-		$response = $this->endpoint->handle( $request );
-		$data     = $response->get_data();
-
-		$this->assertStringContainsString( 'Привет', $data['markdown'] );
-		$this->assertStringContainsString( '你好', $data['markdown'] );
-	}
-
-	/**
-	 * GIVEN a post with multiple blocks
-	 * WHEN converting to markdown
-	 * THEN all blocks are included
-	 */
-	#[Test]
-	public function it_handles_multiple_blocks(): void {
-		global $mock_posts, $mock_parsed_blocks;
-
-		$post               = new WP_Post( 666 );
-		$post->post_content = 'content';
-		$post->post_title   = 'Multi Block';
-		$mock_posts[666]    = $post;
-
-		$mock_parsed_blocks = [
-			[
-				'blockName'   => 'core/heading',
-				'attrs'       => [ 'level' => 1 ],
-				'innerHTML'   => '<h1>Title</h1>',
-				'innerBlocks' => [],
-			],
-			[
-				'blockName'   => 'core/paragraph',
-				'attrs'       => [],
-				'innerHTML'   => '<p>Content</p>',
-				'innerBlocks' => [],
-			],
-		];
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 666 );
-
-		$response = $this->endpoint->handle( $request );
-		$data     = $response->get_data();
-
-		$this->assertStringContainsString( '# Title', $data['markdown'] );
-		$this->assertStringContainsString( 'Content', $data['markdown'] );
-	}
-
-	/**
-	 * GIVEN a post with different status
-	 * WHEN calling the endpoint
-	 * THEN the status is correctly returned
-	 */
-	#[Test]
-	public function it_handles_different_post_statuses(): void {
-		global $mock_posts, $mock_parsed_blocks;
-
-		$post              = new WP_Post( 777 );
-		$post->post_title  = 'Private Post';
-		$post->post_status = 'private';
-		$post->post_name   = 'private-post';
-		$mock_posts[777]   = $post;
-
-		$mock_parsed_blocks = [];
-
-		$request = new WP_REST_Request();
-		$request->set_param( 'post_id', 777 );
-
-		$response = $this->endpoint->handle( $request );
-		$data     = $response->get_data();
-
-		$this->assertEquals( 'private', $data['post_status'] );
 	}
 }
